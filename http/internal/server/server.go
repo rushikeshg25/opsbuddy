@@ -9,7 +9,7 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 
-	"opsbuddy/internal/database"
+	"http/internal/database"
 )
 
 type Server struct {
