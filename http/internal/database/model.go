@@ -8,7 +8,7 @@ type User struct {
 	Email       string    `gorm:"size:255;not null;uniqueIndex" json:"email"`
 	Name        string    `gorm:"size:255" json:"name"`
 	AvatarURL   string    `gorm:"size:500" json:"avatar_url"`
-	Provider    string    `gorm:"size:50;default:'github'" json:"provider"`
+	Provider    string    `gorm:"size:50;default:'google'" json:"provider"`
 	ProviderID  string    `gorm:"size:255" json:"provider_id"`
 	AccessToken string    `gorm:"size:500" json:"access_token"`
 	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`

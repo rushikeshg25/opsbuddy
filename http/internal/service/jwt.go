@@ -3,7 +3,9 @@ package service
 import (
 	"errors"
 	"fmt"
+	"http/internal/database"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -27,6 +29,24 @@ func GenerateJWT(user goth.User) (string, error) {
 
 	claims := Claims{
 		UserID:   user.UserID,
+		UserName: user.Name,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 72)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(JWT_SECRET))
+}
+
+func GenerateJWTFromDBUser(user *database.User) (string, error) {
+	if JWT_SECRET == "" {
+		return "", errors.New("JWT_SECRET environment variable is not set")
+	}
+
+	claims := Claims{
+		UserID:   strconv.FormatUint(uint64(user.ID), 10), // Convert uint to string
 		UserName: user.Name,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 72)),

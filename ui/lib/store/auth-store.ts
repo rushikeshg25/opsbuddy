@@ -4,6 +4,8 @@ import { persist } from 'zustand/middleware';
 export interface User {
   id: string;
   name: string;
+  email?: string;
+  avatar_url?: string;
 }
 
 interface AuthState {
@@ -20,6 +22,7 @@ interface AuthActions {
   login: () => void;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  refreshAuth: () => Promise<void>;
   reset: () => void;
 }
 
@@ -54,7 +57,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       login: () => {
-        window.location.href = 'http://localhost:8080/auth/github';
+        window.location.href = 'http://localhost:8080/auth/google';
       },
 
       logout: async () => {
@@ -91,19 +94,57 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       checkAuth: async () => {
-        if (get().isInitialized) return;
+        const state = get();
+        if (state.isInitialized) return;
         
         set({ isLoading: true });
         
         try {
-          const response = await fetch('http://localhost:8080/auth/me', {
+          const response = await fetch('http://localhost:8080/api/me', {
             credentials: 'include'
           });
 
           if (response.ok) {
             const data = await response.json();
             set({
-              user: data.user,
+              user: { id: data.user_name, name: data.user_name },
+              isAuthenticated: true,
+              isLoading: false,
+              isInitialized: true,
+            });
+          } else {
+            // Clear any stale persisted data
+            set({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+              isInitialized: true,
+            });
+          }
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          // Clear any stale persisted data
+          set({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            isInitialized: true,
+          });
+        }
+      },
+
+      refreshAuth: async () => {
+        set({ isLoading: true });
+        
+        try {
+          const response = await fetch('http://localhost:8080/api/me', {
+            credentials: 'include'
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            set({
+              user: { id: data.user_name, name: data.user_name },
               isAuthenticated: true,
               isLoading: false,
               isInitialized: true,
@@ -117,7 +158,7 @@ export const useAuthStore = create<AuthStore>()(
             });
           }
         } catch (error) {
-          console.error('Auth check failed:', error);
+          console.error('Auth refresh failed:', error);
           set({
             user: null,
             isAuthenticated: false,

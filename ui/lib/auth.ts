@@ -1,19 +1,21 @@
 export interface User {
   id: string;
   name: string;
+  email?: string;
+  avatar_url?: string;
 }
 
 export const authAPI = {
   // Check if user is authenticated
   checkAuth: async (): Promise<User | null> => {
     try {
-      const response = await fetch('http://localhost:8080/auth/me', {
+      const response = await fetch('http://localhost:8080/api/me', {
         credentials: 'include'
       });
       
       if (response.ok) {
         const data = await response.json();
-        return data.user;
+        return { id: data.user_name, name: data.user_name };
       }
       return null;
     } catch (error) {
@@ -37,9 +39,9 @@ export const authAPI = {
     }
   },
 
-  // Login with GitHub (redirects to backend)
-  loginWithGitHub: () => {
-    window.location.href = 'http://localhost:8080/auth/github';
+  // Login with Google (redirects to backend)
+  loginWithGoogle: () => {
+    window.location.href = 'http://localhost:8080/auth/google';
   }
 };
 

@@ -28,8 +28,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 	api := r.Group("/api")
 	api.Use(middleware.JwtMiddleware())
 	{
-		controller.NewUserController(db, r)
-		controller.NewProductController(db, r)
+		controller.NewUserController(db, api)
+		controller.NewProductController(db, api)
 	}
 
 	controller.NewAuthController(db, r)

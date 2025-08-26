@@ -9,16 +9,14 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewUserController(db *gorm.DB, r *gin.Engine) {
+func NewUserController(db *gorm.DB, api *gin.RouterGroup) {
 	_, err := service.NewUserService(db)
 	if err != nil {
 		log.Fatalf("Failed to create user service: %v", err)
 	}
 
-	userRouter := r.Group("/user")
-	{
-		userRouter.GET("/me", getUserName)
-	}
+	// Register /me endpoint directly on the API group (will be /api/me)
+	api.GET("/me", getUserName)
 }
 
 func getUserName(c *gin.Context) {

@@ -82,11 +82,19 @@ const DashboardPage = () => {
                     variant="outline"
                     className="flex items-center space-x-2"
                   >
-                    <div className="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                      <span className="text-xs font-medium">
-                        {user?.name?.charAt(0).toUpperCase() || "U"}
-                      </span>
-                    </div>
+                    {user?.avatar_url ? (
+                      <img
+                        src={user.avatar_url}
+                        alt={user.name || "User"}
+                        className="w-6 h-6 rounded-full"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                        <span className="text-xs font-medium">
+                          {user?.name?.charAt(0).toUpperCase() || "U"}
+                        </span>
+                      </div>
+                    )}
                     <span>{user?.name || "User"}</span>
                   </Button>
                 </DropdownMenuTrigger>

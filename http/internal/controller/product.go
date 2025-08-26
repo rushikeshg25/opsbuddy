@@ -15,7 +15,7 @@ type ProductController struct {
 	productService *service.ProductService
 }
 
-func NewProductController(db *gorm.DB, r *gin.Engine) *ProductController {
+func NewProductController(db *gorm.DB, api *gin.RouterGroup) *ProductController {
 	productService, err := service.NewProductService(db)
 	if err != nil {
 		log.Fatalf("Failed to create product service: %v", err)
@@ -23,17 +23,15 @@ func NewProductController(db *gorm.DB, r *gin.Engine) *ProductController {
 	p := &ProductController{
 		productService: productService,
 	}
-	productRouter := r.Group("/product")
-	{
-		productRouter.GET("/all", p.getAllProducts)
-		productRouter.GET("/:product_id", p.getProduct)
-		productRouter.POST("/create", p.createProduct)
-		productRouter.PUT("/:product_id", p.updateProduct)
-		productRouter.DELETE("/:product_id", p.deleteProduct)
-		productRouter.GET("/user/:user_id", p.getProductsByUser)
-		productRouter.GET("/search", p.searchProducts)
-		productRouter.GET("/count", p.getProductCount)
-	}
+	// Register routes directly on the API group (will be /api/*)
+	api.GET("/products", p.getAllProducts)
+	api.GET("/products/:product_id", p.getProduct)
+	api.POST("/products", p.createProduct)
+	api.PUT("/products/:product_id", p.updateProduct)
+	api.DELETE("/products/:product_id", p.deleteProduct)
+	api.GET("/products/user/:user_id", p.getProductsByUser)
+	api.GET("/products/search", p.searchProducts)
+	api.GET("/products/count", p.getProductCount)
 	return p
 }
 

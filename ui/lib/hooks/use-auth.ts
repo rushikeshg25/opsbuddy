@@ -13,6 +13,7 @@ export const useAuth = () => {
     login,
     logout,
     checkAuth,
+    refreshAuth,
   } = useAuthStore();
 
   // Initialize auth check on first load
@@ -30,6 +31,7 @@ export const useAuth = () => {
     login,
     logout,
     checkAuth,
+    refreshAuth,
     // Helper methods
     setUser,
     setLoading,

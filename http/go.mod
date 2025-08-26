@@ -12,6 +12,8 @@ require (
 	gorm.io/gorm v1.30.0
 )
 
+require cloud.google.com/go/compute/metadata v0.8.0 // indirect
+
 require (
 	github.com/bytedance/sonic v1.13.3 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
