@@ -1,4 +1,4 @@
-module github.com/rushikeshg25/opsbuddy/sdk
+module github.com/rushikeshg25/opsbuddy/sdk/go
 
 go 1.24.6
 
