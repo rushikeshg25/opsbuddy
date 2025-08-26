@@ -1,0 +1,43 @@
+{
+  "name": "@opsbuddy/sdk",
+  "version": "1.0.0",
+  "description": "Nodejs SDK for OpsBuddy",
+  "main": "index.js",
+  "contributors": [
+    "Rushikesh <https://x.com/RushikeshG10>"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf ./dist",
+    "dev": "tsup --watch --onSuccess \"node dist/index.js\"",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rushikeshg25/opsbuddy.git",
+    "directory": "sdk/nodejs"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "opsbuddy",
+    "sdk",
+    "nodejs"
+  ],
+  "author": "Rushikesh",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "ts-proto": "^2.7.7",
+    "tsup": "^8.3.0"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.13.4"
+  }
+}

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package opsbuddy.sdk.ingestion;
+
+option go_package = "./proto";
+
+
+service IngestionService {
+    rpc IngestLogBatch(IngestEventRequest) returns (IngestEventResponse);
+}
+
+
+message  IngestEventResponse{
+    bool success = 1;
+}
+
+message IngestEventRequest {
+    repeated LogEntry logs = 1;
+    string service_id = 2;
+    string auth_token = 3;
+}
+
+message LogEntry {
+    string timestamp = 1;
+    string message = 2;
+}
+
