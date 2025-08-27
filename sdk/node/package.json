@@ -2,7 +2,16 @@
   "name": "@opsbuddy/sdk",
   "version": "1.0.0",
   "description": "Nodejs SDK for OpsBuddy",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "contributors": [
     "Rushikesh <https://x.com/RushikeshG10>"
   ],
@@ -35,7 +44,8 @@
   "type": "commonjs",
   "devDependencies": {
     "ts-proto": "^2.7.7",
-    "tsup": "^8.3.0"
+    "tsup": "^8.3.0",
+    "typescript": "^5.9.2"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.13.4"
