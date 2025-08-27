@@ -37,3 +37,13 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg14
+    container_name: timescaledb
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+      POSTGRES_DB: opsbuddy
+    ports:
+      - '5433:5432'
