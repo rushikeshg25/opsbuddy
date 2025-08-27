@@ -1,26 +1,36 @@
-CREATE DATABASE IF NOT EXISTS opsbuddy;
 
-USE opsbuddy;
+DO $$
+BEGIN
+   IF NOT EXISTS (
+      SELECT FROM pg_database WHERE datname = 'opsbuddy'
+   ) THEN
+      PERFORM dblink_exec('dbname=' || current_database(), 'CREATE DATABASE opsbuddy');
+   END IF;
+END $$;
+
+\c opsbuddy;
+
+-- Enable UUID extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(255) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    name VARCHAR(255),
+    avatar_url VARCHAR(500),
+    provider VARCHAR(50) DEFAULT 'google',
+    provider_id VARCHAR(255),
+    access_token VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    user_id INT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id),
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    auth_token UUID DEFAULT uuid_generate_v4(),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-d
-ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255);
-ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500);
-ALTER TABLE users ADD COLUMN IF NOT EXISTS provider VARCHAR(50) DEFAULT 'github';
-ALTER TABLE users ADD COLUMN IF NOT EXISTS provider_id VARCHAR(255);
-ALTER TABLE users ADD COLUMN IF NOT EXISTS access_token VARCHAR(500);
-ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;

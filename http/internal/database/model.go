@@ -1,6 +1,10 @@
 package database
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type User struct {
 	ID          uint      `gorm:"primaryKey;autoIncrement" json:"id"`
@@ -23,6 +27,7 @@ type Product struct {
 	UserID      uint      `gorm:"not null" json:"user_id"`
 	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	User        User      `gorm:"foreignKey:UserID;references:ID" json:"user,omitempty"`
+	AuthToken   uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4()" json:"auth_token"`
 }
 
 func (User) TableName() string {
