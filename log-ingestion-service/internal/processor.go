@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"log"
 	pb "log-ingestion-service/proto"
+
+	r "github.com/rushikeshg25/token-bucket"
 )
 
 type Processor struct {
 	redis *Redis
 	db    *Database
 	kafka *Producer
+	r     *r.RateLimiter
 }
 
 type LogBatch struct {
@@ -27,16 +30,20 @@ func NewProcessor() (*Processor, error) {
 	}
 	kafka := NewProducer([]string{"localhost:9094"}, "logs")
 
+	rl := r.NewRateLimiter(redis.client, 100, 5)
+
 	return &Processor{
 		redis: redis,
 		db:    db,
 		kafka: kafka,
+		r:     rl,
 	}, nil
 
 }
 
 func (p *Processor) ProcessLogs(ctx context.Context, req *pb.IngestEventRequest) error {
 	// productIDStr := req.ServiceId
+
 	productIDStr, err := p.redis.Get(req.AuthToken, ctx)
 	if err == nil {
 		if productIDStr != req.ServiceId {
@@ -56,6 +63,14 @@ func (p *Processor) ProcessLogs(ctx context.Context, req *pb.IngestEventRequest)
 		if err := p.redis.Set(req.AuthToken, productIDStr, ctx); err != nil {
 			log.Printf("Warning: failed to cache auth token in Redis: %v", err)
 		}
+	}
+
+	allowed, err := p.r.Allow(ctx, fmt.Sprintf("service-%s", productIDStr))
+	if err != nil {
+		return fmt.Errorf("failed to check rate limit: %w", err)
+	}
+	if !allowed {
+		return fmt.Errorf("rate limit exceeded")
 	}
 
 	err = p.kafka.Write(
