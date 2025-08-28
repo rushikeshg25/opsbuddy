@@ -25,7 +25,7 @@ func NewProcessor() (*Processor, error) {
 	if err != nil {
 		return nil, err
 	}
-	kafka := NewProducer([]string{"localhost:9092"}, "logs")
+	kafka := NewProducer([]string{"localhost:9094"}, "logs")
 
 	return &Processor{
 		redis: redis,
@@ -36,6 +36,7 @@ func NewProcessor() (*Processor, error) {
 }
 
 func (p *Processor) ProcessLogs(ctx context.Context, req *pb.IngestEventRequest) error {
+	// productIDStr := req.ServiceId
 	productIDStr, err := p.redis.Get(req.AuthToken, ctx)
 	if err == nil {
 		if productIDStr != req.ServiceId {
@@ -65,7 +66,7 @@ func (p *Processor) ProcessLogs(ctx context.Context, req *pb.IngestEventRequest)
 	if err != nil {
 		return fmt.Errorf("failed to write logs to kafka: %w", err)
 	}
-
+	// fmt.Println("Successfully processed logs")
 	return nil
 }
 

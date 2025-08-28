@@ -21,12 +21,6 @@ func NewRedisClient() *Redis {
 	if os.Getenv("REDIS_PORT") == "" {
 		panic("REDIS_PORT environment variable not set")
 	}
-	if os.Getenv("REDIS_PASSWORD") == "" {
-		panic("REDIS_PASSWORD environment variable not set")
-	}
-	if os.Getenv("REDIS_DB") == "" {
-		panic("REDIS_DB environment variable not set")
-	}
 	rdb := redis.NewClient(
 		&redis.Options{
 			Addr:     fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT")),

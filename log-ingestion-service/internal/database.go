@@ -25,7 +25,7 @@ func NewDatabase() (*Database, error) {
 
 	user := os.Getenv("DB_USER")
 	if user == "" {
-		user = "postgres"
+		user = "rushikesh"
 	}
 
 	password := os.Getenv("DB_PASSWORD")

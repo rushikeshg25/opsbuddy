@@ -11,6 +11,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "github.com/joho/godotenv/autoload"
+
 	"google.golang.org/grpc"
 )
 
@@ -36,7 +38,6 @@ func (s *Server) IngestLogBatch(ctx context.Context, req *pb.IngestEventRequest)
 		log.Printf("Error processing logs: %v", err)
 		return &pb.IngestEventResponse{Success: false}, err
 	}
-
 	return &pb.IngestEventResponse{Success: true}, nil
 }
 

@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	brokers := []string{"localhost:9092"}
+	brokers := []string{"localhost:9094"}
 	topic := "logs"
 	groupId := "log-consumer-service"
 
