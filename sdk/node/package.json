@@ -1,5 +1,5 @@
 {
-  "name": "@opsbuddy/sdk",
+  "name": "opsbuddy-sdk",
   "version": "1.0.0",
   "description": "Nodejs SDK for OpsBuddy",
   "main": "dist/index.js",
@@ -13,7 +13,7 @@
     }
   },
   "contributors": [
-    "Rushikesh <https://x.com/RushikeshG10>"
+    "Rushikesh <https://x.com/rushikeshg10>"
   ],
   "scripts": {
     "build": "tsup",
@@ -48,6 +48,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^1.13.4"
+    "@grpc/grpc-js": "^1.13.4",
+    "@bufbuild/protobuf": "^2.2.2"
   }
 }
