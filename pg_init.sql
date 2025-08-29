@@ -34,3 +34,11 @@ CREATE TABLE IF NOT EXISTS products (
     auth_token UUID DEFAULT uuid_generate_v4(),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS logs (
+    id SERIAL PRIMARY KEY,
+    product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    log TEXT NOT NULL,
+    time TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
