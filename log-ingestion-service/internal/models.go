@@ -28,6 +28,16 @@ type Product struct {
 	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	User        User      `gorm:"foreignKey:UserID;references:ID" json:"user,omitempty"`
 	AuthToken   uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4()" json:"auth_token"`
+	HealthAPI   string    `gorm:"type:text" json:"health_api"`
+	Logs        []Log     `gorm:"constraint:OnDelete:CASCADE;"` // one-to-many relation
+}
+
+type Log struct {
+	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	ProductID uint      `gorm:"not null;index" json:"product_id"` // foreign key with index
+	Product   Product   `gorm:"foreignKey:ProductID" json:"product,omitempty"`
+	LogData   string    `gorm:"type:text;not null" json:"log_data"` // renamed from 'Log' to avoid confusion
+	Timestamp time.Time `gorm:"not null;default:CURRENT_TIMESTAMP"`
 }
 
 func (User) TableName() string {
@@ -37,3 +47,5 @@ func (User) TableName() string {
 func (Product) TableName() string {
 	return "products"
 }
+
+func (Log) TableName() string { return "logs" }

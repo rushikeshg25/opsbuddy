@@ -20,7 +20,7 @@ func NewDatabase() (*Database, error) {
 
 	port := os.Getenv("DB_PORT")
 	if port == "" {
-		port = "5432"
+		port = "5433"
 	}
 
 	user := os.Getenv("DB_USER")
