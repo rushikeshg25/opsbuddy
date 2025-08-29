@@ -50,36 +50,6 @@ func main() {
 		log.Println("Consumers stopped")
 	}()
 
-	// Batch processing for better performance
-	logBatch := make([]internal.Log, 0, 100)
-	batchTicker := time.NewTicker(5 * time.Second) // Flush batch every 5 seconds
-	defer batchTicker.Stop()
-
-	// Function to flush the batch
-	flushBatch := func() {
-		if len(logBatch) > 0 {
-			if err := logr.AddLogsBatch(logBatch); err != nil {
-				log.Printf("Error saving batch to database: %v", err)
-			} else {
-				log.Printf("Successfully saved batch of %d logs to TimescaleDB", len(logBatch))
-			}
-			logBatch = logBatch[:0] // Clear the batch
-		}
-	}
-
-	// Start batch flusher goroutine
-	go func() {
-		for {
-			select {
-			case <-batchTicker.C:
-				flushBatch()
-			case <-ctx.Done():
-				flushBatch() // Flush remaining logs before shutdown
-				return
-			}
-		}
-	}()
-
 	err = consumer.Read(ctx, func(key, value string) {
 		// Parse the product ID from the key
 		productID, err := strconv.ParseUint(key, 10, 32)
@@ -88,39 +58,41 @@ func main() {
 			return
 		}
 
-		// Parse the JSON log entry
-		var logEntry struct {
-			Timestamp string `json:"timestamp"`
-			Message   string `json:"message"`
+		// Parse the JSON batch
+		var batch struct {
+			ProductID string `json:"product_id"`
+			Logs      []struct {
+				Timestamp string `json:"timestamp"`
+				Message   string `json:"message"`
+			} `json:"logs"`
 		}
 
-		if err := json.Unmarshal([]byte(value), &logEntry); err != nil {
-			log.Printf("Error parsing log entry JSON: %v", err)
+		if err := json.Unmarshal([]byte(value), &batch); err != nil {
+			log.Printf("Error parsing batch JSON: %v", err)
 			return
 		}
 
-		// Parse the timestamp
-		timestamp, err := time.Parse(time.RFC3339, logEntry.Timestamp)
-		if err != nil {
-			log.Printf("Error parsing timestamp '%s': %v", logEntry.Timestamp, err)
-			// Use current time as fallback
-			timestamp = time.Now()
+		// Process each log in the batch individually
+		successCount := 0
+		for _, logEntry := range batch.Logs {
+			// Parse the timestamp
+			timestamp, err := time.Parse(time.RFC3339, logEntry.Timestamp)
+			if err != nil {
+				log.Printf("Error parsing timestamp '%s': %v", logEntry.Timestamp, err)
+				// Use current time as fallback
+				timestamp = time.Now()
+			}
+
+			// Add individual log to TimescaleDB with original timestamp
+			_, err = logr.AddLogWithTimestamp(uint(productID), logEntry.Message, timestamp)
+			if err != nil {
+				log.Printf("Error saving individual log to database: %v", err)
+				continue
+			}
+			successCount++
 		}
 
-		// Create log entry for database
-		logData := internal.Log{
-			ProductID: uint(productID),
-			LogData:   logEntry.Message,
-			Timestamp: timestamp,
-		}
-
-		// Add to batch
-		logBatch = append(logBatch, logData)
-
-		// Flush batch if it reaches the limit
-		if len(logBatch) >= 100 {
-			flushBatch()
-		}
+		log.Printf("Successfully processed batch: %d/%d logs saved for product %d", successCount, len(batch.Logs), productID)
 	})
 	if err != nil {
 		log.Fatalf("Failed to read messages: %v", err)

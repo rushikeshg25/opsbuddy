@@ -73,6 +73,20 @@ func (r *LogRepository) AddLog(productID uint, logData string) (*Log, error) {
 	return log, nil
 }
 
+func (r *LogRepository) AddLogWithTimestamp(productID uint, logData string, timestamp time.Time) (*Log, error) {
+	log := &Log{
+		ProductID: productID,
+		LogData:   logData,
+		Timestamp: timestamp,
+	}
+
+	if err := r.db.Create(log).Error; err != nil {
+		return nil, fmt.Errorf("failed to create log: %w", err)
+	}
+
+	return log, nil
+}
+
 func (r *LogRepository) AddLogsBatch(logs []Log) error {
 	if len(logs) == 0 {
 		return nil

@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	pb "log-ingestion-service/proto"
@@ -24,20 +25,45 @@ func NewProducer(brokers []string, topic string) *Producer {
 }
 
 func (p *Producer) Write(ctx context.Context, logs []*pb.LogEntry, key string) error {
-	messages := make([]kafka.Message, len(logs))
+	// Create a batch structure
+	batch := struct {
+		ProductID string `json:"product_id"`
+		Logs      []struct {
+			Timestamp string `json:"timestamp"`
+			Message   string `json:"message"`
+		} `json:"logs"`
+	}{
+		ProductID: key,
+		Logs: make([]struct {
+			Timestamp string `json:"timestamp"`
+			Message   string `json:"message"`
+		}, len(logs)),
+	}
 
+	// Convert protobuf logs to JSON structure
 	for i, log := range logs {
-		// You can serialize the log entry as JSON or keep as protobuf
-		value := fmt.Sprintf(`{"timestamp":"%s","message":"%s"}`,
-			log.GetTimestamp(), log.GetMessage())
-
-		messages[i] = kafka.Message{
-			Key:   []byte(key),
-			Value: []byte(value),
+		batch.Logs[i] = struct {
+			Timestamp string `json:"timestamp"`
+			Message   string `json:"message"`
+		}{
+			Timestamp: log.GetTimestamp(),
+			Message:   log.GetMessage(),
 		}
 	}
 
-	return p.writer.WriteMessages(ctx, messages...)
+	// Serialize the entire batch as JSON
+	batchJSON, err := json.Marshal(batch)
+	if err != nil {
+		return fmt.Errorf("failed to marshal batch: %w", err)
+	}
+
+	// Send as a single message
+	message := kafka.Message{
+		Key:   []byte(key),
+		Value: batchJSON,
+	}
+
+	return p.writer.WriteMessages(ctx, message)
 }
 
 func (p *Producer) Close() error {

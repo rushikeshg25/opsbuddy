@@ -41,8 +41,6 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/redis/go-redis/v9 v9.12.1 h1:k5iquqv27aBtnTm2tIkROUDp8JBXhXZIVu1InSgvovg=
 github.com/redis/go-redis/v9 v9.12.1/go.mod h1:huWgSWd8mW6+m0VPhJjSSQ+d6Nh1VICQ6Q5lHuCH/Iw=
-github.com/rushikeshg25/token-bucket v0.0.0-20250828123404-fbe81053a6a0 h1:o8lf4X5Bc6OQo8kEGL4TakD4teWin5L7KoNBusFCsgA=
-github.com/rushikeshg25/token-bucket v0.0.0-20250828123404-fbe81053a6a0/go.mod h1:jMCqDy0FjOPXmFDywq+dE+ucY7rd7/RJoZym82Sga34=
 github.com/rushikeshg25/token-bucket v0.0.0-20250828131508-97e1bc7d0fa5 h1:HR2yNVopgFo+tF0xSXBzUvCggl5H2KquDk4JBsihdcU=
 github.com/rushikeshg25/token-bucket v0.0.0-20250828131508-97e1bc7d0fa5/go.mod h1:jMCqDy0FjOPXmFDywq+dE+ucY7rd7/RJoZym82Sga34=
 github.com/segmentio/kafka-go v0.4.49 h1:GJiNX1d/g+kG6ljyJEoi9++PUMdXGAxb7JGPiDCuNmk=
