@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -15,17 +17,34 @@ const (
 )
 
 type PingService struct {
-	db          Service
-	heap        *PingHeap
-	workerPool  *WorkerPool
-	httpClient  *http.Client
-	ctx         context.Context
-	cancel      context.CancelFunc
-	lastQueried time.Time
+	db            Service
+	heap          *PingHeap
+	workerPool    *WorkerPool
+	httpClient    *http.Client
+	ctx           context.Context
+	cancel        context.CancelFunc
+	lastQueried   time.Time
+	kafkaProducer *KafkaProducer
 }
 
 func NewPingService(db Service, workerCount int) *PingService {
 	ctx, cancel := context.WithCancel(context.Background())
+
+	kafkaBrokersStr := os.Getenv("KAFKA_BROKERS")
+	if kafkaBrokersStr == "" {
+		kafkaBrokersStr = "localhost:9094"
+	}
+	kafkaBrokers := strings.Split(kafkaBrokersStr, ",")
+	for i, broker := range kafkaBrokers {
+		kafkaBrokers[i] = strings.TrimSpace(broker)
+	}
+
+	kafkaTopic := os.Getenv("KAFKA_TOPIC")
+	if kafkaTopic == "" {
+		kafkaTopic = "notifications"
+	}
+
+	kafkaProducer := NewKafkaProducer(kafkaBrokers, kafkaTopic)
 
 	ps := &PingService{
 		db:   db,
@@ -33,9 +52,10 @@ func NewPingService(db Service, workerCount int) *PingService {
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-		ctx:         ctx,
-		cancel:      cancel,
-		lastQueried: time.Now(),
+		ctx:           ctx,
+		cancel:        cancel,
+		lastQueried:   time.Now(),
+		kafkaProducer: kafkaProducer,
 	}
 
 	ps.workerPool = NewWorkerPool(workerCount, ps)
@@ -63,6 +83,11 @@ func (ps *PingService) Stop() {
 	log.Println("Stopping ping service...")
 	ps.cancel()
 	ps.workerPool.Stop()
+
+	if err := ps.kafkaProducer.Close(); err != nil {
+		log.Printf("Error closing Kafka producer: %v", err)
+	}
+
 	log.Println("Ping service stopped")
 }
 
@@ -185,41 +210,174 @@ func (ps *PingService) handleFailedPing(item *PingItem) {
 }
 
 func (ps *PingService) markServiceDown(productID uint) {
-	downtime := Downtime{
-		ProductID: productID,
-		StartTime: time.Now(),
-		Status:    "down",
-	}
+	tx := ps.db.GetDB().Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			log.Printf("Transaction rolled back due to panic in markServiceDown for product %d: %v", productID, r)
+		}
+	}()
 
-	if err := ps.db.GetDB().Create(&downtime).Error; err != nil {
-		log.Printf("Failed to record downtime for product %d: %v", productID, err)
-	} else {
+	var existingDowntime Downtime
+	err := tx.Where("product_id = ? AND end_time IS NULL", productID).
+		Order("start_time DESC").
+		First(&existingDowntime).Error
+
+	now := time.Now()
+
+	if err != nil {
+		downtime := Downtime{
+			ProductID:          productID,
+			StartTime:          now,
+			Status:             "down",
+			IsNotificationSent: false,
+		}
+
+		if err := tx.Create(&downtime).Error; err != nil {
+			tx.Rollback()
+			log.Printf("Failed to record downtime for product %d: %v", productID, err)
+			return
+		}
+
+		var product Product
+		if err := tx.Preload("User").First(&product, productID).Error; err != nil {
+			tx.Rollback()
+			log.Printf("Failed to get product and user info for product %d: %v", productID, err)
+			return
+		}
+
+		if err := ps.kafkaProducer.SendNotification(ps.ctx, NotificationEvent{
+			ProductID: productID,
+			UserEmail: product.User.Email,
+			Timestamp: now,
+			EventType: "service_down",
+			Message:   fmt.Sprintf("Service %s is down", product.Name),
+		}); err != nil {
+			log.Printf("Failed to send downtime notification for product %d: %v", productID, err)
+		} else {
+			log.Printf("Downtime notification sent for product %d", productID)
+			downtime.IsNotificationSent = true
+			if err := tx.Save(&downtime).Error; err != nil {
+				tx.Rollback()
+				log.Printf("Failed to update notification status for product %d: %v", productID, err)
+				return
+			}
+		}
+
+		if err := tx.Commit().Error; err != nil {
+			log.Printf("Failed to commit downtime transaction for product %d: %v", productID, err)
+			return
+		}
+
 		log.Printf("Recorded downtime for product %d", productID)
+	} else {
+		// Existing downtime record found
+		if !existingDowntime.IsNotificationSent {
+			// Get user email for notification
+			var product Product
+			if err := tx.Preload("User").First(&product, productID).Error; err != nil {
+				tx.Rollback()
+				log.Printf("Failed to get product and user info for product %d: %v", productID, err)
+				return
+			}
+
+			// Send notification to Kafka
+			if err := ps.kafkaProducer.SendNotification(ps.ctx, NotificationEvent{
+				ProductID: productID,
+				UserEmail: product.User.Email,
+				Timestamp: now,
+				EventType: "service_down",
+				Message:   fmt.Sprintf("Service %s is down", product.Name),
+			}); err != nil {
+				tx.Rollback()
+				log.Printf("Failed to send downtime notification for product %d: %v", productID, err)
+				return
+			}
+
+			// Update the record to mark notification as sent
+			existingDowntime.IsNotificationSent = true
+			if err := tx.Save(&existingDowntime).Error; err != nil {
+				tx.Rollback()
+				log.Printf("Failed to update notification status for product %d: %v", productID, err)
+				return
+			}
+
+			if err := tx.Commit().Error; err != nil {
+				log.Printf("Failed to commit notification update transaction for product %d: %v", productID, err)
+				return
+			}
+
+			log.Printf("Downtime notification sent for product %d", productID)
+		} else {
+			tx.Rollback() // No changes needed
+			log.Printf("Product %d still down, notification already sent", productID)
+		}
 	}
 }
 
 func (ps *PingService) markServiceUp(productID uint) {
+	// Use transaction for database operations
+	tx := ps.db.GetDB().Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			log.Printf("Transaction rolled back due to panic in markServiceUp for product %d: %v", productID, r)
+		}
+	}()
+
 	now := time.Now()
 
 	var downtime Downtime
-	err := ps.db.GetDB().Where("product_id = ? AND end_time IS NULL", productID).
+	err := tx.Where("product_id = ? AND end_time IS NULL", productID).
 		Order("start_time DESC").
 		First(&downtime).Error
 
 	if err != nil {
+		tx.Rollback()
 		log.Printf("No active downtime record found for product %d: %v", productID, err)
 		return
 	}
 
+	// Calculate downtime duration
+	downtimeDuration := now.Sub(downtime.StartTime)
+
+	// Update the downtime record
 	downtime.EndTime = &now
 	downtime.Status = "up"
 
-	if err := ps.db.GetDB().Save(&downtime).Error; err != nil {
+	if err := tx.Save(&downtime).Error; err != nil {
+		tx.Rollback()
 		log.Printf("Failed to update downtime record for product %d: %v", productID, err)
-	} else {
-		log.Printf("Service %d is back up, downtime duration: %v",
-			productID, now.Sub(downtime.StartTime))
+		return
 	}
+
+	// Get user email for notification
+	var product Product
+	if err := tx.Preload("User").First(&product, productID).Error; err != nil {
+		log.Printf("Failed to get product and user info for recovery notification for product %d: %v", productID, err)
+		// Continue without user email - we'll handle this in notification service
+	}
+
+	// Send recovery notification to Kafka
+	if err := ps.kafkaProducer.SendNotification(ps.ctx, NotificationEvent{
+		ProductID: productID,
+		UserEmail: product.User.Email,
+		Timestamp: now,
+		EventType: "service_up",
+		Message:   fmt.Sprintf("Service %s is back up after %v downtime", product.Name, downtimeDuration),
+	}); err != nil {
+		log.Printf("Failed to send recovery notification for product %d: %v", productID, err)
+		// Don't rollback transaction for Kafka failures, just log
+	} else {
+		log.Printf("Recovery notification sent for product %d", productID)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		log.Printf("Failed to commit recovery transaction for product %d: %v", productID, err)
+		return
+	}
+
+	log.Printf("Service %d is back up, downtime duration: %v", productID, downtimeDuration)
 }
 
 func (ps *PingService) periodicProductFetcher() {
