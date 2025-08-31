@@ -41,12 +41,13 @@ type Log struct {
 }
 
 type Downtime struct {
-	ID        uint       `gorm:"primaryKey;autoIncrement" json:"id"`
-	ProductID uint       `gorm:"not null;index" json:"product_id"`
-	Product   Product    `gorm:"foreignKey:ProductID" json:"product,omitempty"`
-	StartTime time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP" json:"start_time"`
-	EndTime   *time.Time `json:"end_time,omitempty"`
-	Status    string     `gorm:"size:50;not null;default:'down'" json:"status"`
+	ID                 uint       `gorm:"primaryKey;autoIncrement" json:"id"`
+	ProductID          uint       `gorm:"not null;index" json:"product_id"`
+	Product            Product    `gorm:"foreignKey:ProductID" json:"product,omitempty"`
+	StartTime          time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP" json:"start_time"`
+	EndTime            *time.Time `json:"end_time,omitempty"`
+	Status             string     `gorm:"size:50;not null;default:'down'" json:"status"`
+	IsNotificationSent bool       `gorm:"not null;default:false" json:"is_notification_sent"`
 }
 
 func (User) TableName() string {

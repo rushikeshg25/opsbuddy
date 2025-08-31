@@ -29,15 +29,25 @@ type Product struct {
 	User        User      `gorm:"foreignKey:UserID;references:ID" json:"user,omitempty"`
 	AuthToken   uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4()" json:"auth_token"`
 	HealthAPI   string    `gorm:"type:text" json:"health_api"`
-	Logs        []Log     `gorm:"constraint:OnDelete:CASCADE;"` // one-to-many relation
+	Logs        []Log     `gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 type Log struct {
 	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	ProductID uint      `gorm:"not null;index" json:"product_id"` // foreign key with index
+	ProductID uint      `gorm:"not null;index" json:"product_id"`
 	Product   Product   `gorm:"foreignKey:ProductID" json:"product,omitempty"`
-	LogData   string    `gorm:"type:text;not null" json:"log_data"` // renamed from 'Log' to avoid confusion
+	LogData   string    `gorm:"type:text;not null" json:"log_data"`
 	Timestamp time.Time `gorm:"not null;default:CURRENT_TIMESTAMP"`
+}
+
+type Downtime struct {
+	ID                 uint       `gorm:"primaryKey;autoIncrement" json:"id"`
+	ProductID          uint       `gorm:"not null;index" json:"product_id"`
+	Product            Product    `gorm:"foreignKey:ProductID" json:"product,omitempty"`
+	StartTime          time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP" json:"start_time"`
+	EndTime            *time.Time `json:"end_time,omitempty"`
+	Status             string     `gorm:"size:50;not null;default:'down'" json:"status"`
+	IsNotificationSent bool       `gorm:"not null;default:false" json:"is_notification_sent"`
 }
 
 func (User) TableName() string {
@@ -49,3 +59,5 @@ func (Product) TableName() string {
 }
 
 func (Log) TableName() string { return "logs" }
+
+func (Downtime) TableName() string { return "downtimes" }
