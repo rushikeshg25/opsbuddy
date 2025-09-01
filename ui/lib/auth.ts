@@ -1,3 +1,5 @@
+export const SESSION_COOKIE = 'opsbuddy_session';
+
 export interface User {
   id: string;
   name: string;
@@ -59,9 +61,9 @@ export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
 
   if (!response.ok) {
     if (response.status === 401) {
-      // Unauthorized, clear auth state and redirect to login
+      // Unauthorized, clear auth state and redirect to sign-in
       useAuthStore.getState().reset();
-      window.location.href = '/login';
+      window.location.href = '/sign-in';
       throw new Error('Unauthorized');
     }
     throw new Error(`API call failed: ${response.statusText}`);

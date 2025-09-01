@@ -76,8 +76,8 @@ export const useAuthStore = create<AuthStore>()(
               isLoading: false,
             });
             
-            // Redirect to login page
-            window.location.href = '/login';
+            // Redirect to sign-in page
+            window.location.href = '/sign-in';
           } else {
             throw new Error('Logout failed');
           }
@@ -89,7 +89,7 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: false,
             isLoading: false,
           });
-          window.location.href = '/login';
+          window.location.href = '/sign-in';
         }
       },
 

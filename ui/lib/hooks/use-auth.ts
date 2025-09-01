@@ -45,7 +45,7 @@ export const useRequireAuth = () => {
 
   useEffect(() => {
     if (isInitialized && !isLoading && !isAuthenticated) {
-      router.push('/login');
+      router.push('/sign-in');
     }
   }, [isAuthenticated, isLoading, isInitialized, router]);
 
@@ -64,7 +64,7 @@ export const useRequireGuest = () => {
 
   useEffect(() => {
     if (isInitialized && !isLoading && isAuthenticated) {
-      router.push('/dashboard');
+      router.push('/services');
     }
   }, [isAuthenticated, isLoading, isInitialized, router]);
 
