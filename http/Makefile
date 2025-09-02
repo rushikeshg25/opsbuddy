@@ -61,4 +61,13 @@ watch:
             fi; \
         fi
 
-.PHONY: all build run test clean watch docker-run docker-down itest
+.PHONY: all build run test clean watch docker-run docker-down itest seed seed-force
+# Seed the database with dummy data
+seed:
+	@echo "Seeding database..."
+	@go run cmd/seed/main.go
+
+# Force seed the database (overwrites existing data)
+seed-force:
+	@echo "Force seeding database..."
+	@go run cmd/seed/main.go -force

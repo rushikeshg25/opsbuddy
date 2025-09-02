@@ -88,12 +88,15 @@ func (p *ProductController) createProduct(c *gin.Context) {
 		return
 	}
 
-	// user, err := auth.GetUser(c)
-	// if err != nil {
-	//     c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-	//     return
-	// }
-	// product.UserID = user.UserID
+	// Populate UserID from JWT claims set by middleware
+	if claimsVal, exists := c.Get("user"); exists {
+		if claims, ok := claimsVal.(*service.Claims); ok {
+			// claims.UserID is a string; convert to uint
+			if uid, err := strconv.ParseUint(claims.UserID, 10, 32); err == nil {
+				product.UserID = uint(uid)
+			}
+		}
+	}
 
 	createdProduct, err := p.productService.CreateProduct(product)
 	if err != nil {

@@ -104,14 +104,11 @@ func (a *AuthController) googleCallbackHandler(c *gin.Context) {
 		return
 	}
 
-	// Generate JWT token using the database user
 	token, err := service.GenerateJWTFromDBUser(dbUser)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
-
-	// Set secure cookie settings
 	secure := os.Getenv("APP_ENV") == "production"
 	c.SetCookie(
 		"auth_token", // name
@@ -123,8 +120,7 @@ func (a *AuthController) googleCallbackHandler(c *gin.Context) {
 		true,         // httpOnly
 	)
 
-	// Redirect directly to dashboard after successful auth
-	c.Redirect(http.StatusFound, "http://localhost:3000/dashboard")
+	c.Redirect(http.StatusFound, "http://localhost:3000/services")
 }
 
 func (a *AuthController) logoutHandler(c *gin.Context) {

@@ -41,13 +41,25 @@ type Log struct {
 }
 
 type Downtime struct {
-	ID                 uint       `gorm:"primaryKey;autoIncrement" json:"id"`
-	ProductID          uint       `gorm:"not null;index" json:"product_id"`
-	Product            Product    `gorm:"foreignKey:ProductID" json:"product,omitempty"`
-	StartTime          time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP" json:"start_time"`
-	EndTime            *time.Time `json:"end_time,omitempty"`
-	Status             string     `gorm:"size:50;not null;default:'down'" json:"status"`
-	IsNotificationSent bool       `gorm:"not null;default:false" json:"is_notification_sent"`
+	ID                 uint              `gorm:"primaryKey;autoIncrement" json:"id"`
+	ProductID          uint              `gorm:"not null;index" json:"product_id"`
+	Product            Product           `gorm:"foreignKey:ProductID" json:"product,omitempty"`
+	StartTime          time.Time         `gorm:"not null;default:CURRENT_TIMESTAMP" json:"start_time"`
+	EndTime            *time.Time        `json:"end_time,omitempty"`
+	Status             string            `gorm:"size:50;not null;default:'down'" json:"status"`
+	IsNotificationSent bool              `gorm:"not null;default:false" json:"is_notification_sent"`
+	QuickFixes         []ProductQuickFix `gorm:"constraint:OnDelete:CASCADE;" json:"quick_fixes,omitempty"`
+}
+
+type ProductQuickFix struct {
+	ID          uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	DowntimeID  uint      `gorm:"not null;index" json:"downtime_id"`
+	ProductID   uint      `gorm:"not null;index" json:"product_id"`
+	Title       string    `gorm:"size:255;not null" json:"title"`
+	Description string    `gorm:"type:text;not null" json:"description"`
+	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	Downtime    Downtime  `gorm:"foreignKey:DowntimeID" json:"downtime,omitempty"`
+	Product     Product   `gorm:"foreignKey:ProductID" json:"product,omitempty"`
 }
 
 func (User) TableName() string {
@@ -61,3 +73,5 @@ func (Product) TableName() string {
 func (Log) TableName() string { return "logs" }
 
 func (Downtime) TableName() string { return "downtimes" }
+
+func (ProductQuickFix) TableName() string { return "quick_fixes" }

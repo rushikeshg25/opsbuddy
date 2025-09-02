@@ -30,6 +30,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 	{
 		controller.NewUserController(db, api)
 		controller.NewProductController(db, api)
+		controller.NewLogsController(db, api)
+		controller.NewDowntimeController(db, api)
+		controller.NewAnalyticsController(db, api)
 	}
 
 	controller.NewAuthController(db, r)
