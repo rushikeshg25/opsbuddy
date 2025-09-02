@@ -13,65 +13,41 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
+import { useCreateProduct } from "@/lib/hooks/use-products";
 
-interface CreateServiceModalProps {
-  onServiceCreated: () => void;
-}
+interface CreateServiceModalProps {}
 
-export function CreateServiceModal({
-  onServiceCreated,
-}: CreateServiceModalProps) {
+export function CreateServiceModal({}: CreateServiceModalProps = {}) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [healthApi, setHealthApi] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  
+  const createProduct = useCreateProduct();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
 
     try {
-      const response = await fetch("http://localhost:8080/api/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          name,
-          description,
-          health_api: healthApi,
-          user_id: 1, // This should be dynamic based on the logged-in user
-        }),
+      await createProduct.mutateAsync({
+        name,
+        description,
+        health_api: healthApi,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create service");
-      }
 
       // Reset form and close modal
       setName("");
       setDescription("");
       setHealthApi("");
       setOpen(false);
-      onServiceCreated();
     } catch (error) {
       console.error("Error creating service:", error);
-      setError(
-        error instanceof Error ? error.message : "Failed to create service"
-      );
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleClose = () => {
     setOpen(false);
-    setError(null);
+    createProduct.reset(); // Clear any previous errors
     setName("");
     setDescription("");
     setHealthApi("");
@@ -90,9 +66,13 @@ export function CreateServiceModal({
           <DialogTitle>Create New Service</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
+          {createProduct.error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {createProduct.error instanceof Error 
+                  ? createProduct.error.message 
+                  : 'Failed to create service'}
+              </p>
             </div>
           )}
 
@@ -134,12 +114,12 @@ export function CreateServiceModal({
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={loading}
+              disabled={createProduct.isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !name.trim()}>
-              {loading ? "Creating..." : "Create Service"}
+            <Button type="submit" disabled={createProduct.isPending || !name.trim()}>
+              {createProduct.isPending ? "Creating..." : "Create Service"}
             </Button>
           </div>
         </form>

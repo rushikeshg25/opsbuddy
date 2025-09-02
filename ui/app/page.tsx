@@ -1,16 +1,15 @@
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { SiteHeader } from '@/components/site-header';
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { SiteHeader } from "@/components/site-header";
 import {
   Activity,
   Gauge,
-  SearchIcon,
   FileDown,
   Wand2,
   Bell,
   Radio,
-} from 'lucide-react';
+} from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -38,33 +37,33 @@ export default function HomePage() {
         <div className="mt-14 grid gap-4 sm:grid-cols-3">
           {[
             {
-              title: 'Instant status',
-              desc: 'Clear, shareable status pages per service.',
-              Icon: Activity,
+              title: "Real-time monitoring",
+              desc: "Live uptime tracking with instant incident detection.",
+              Icon: Radio,
             },
             {
-              title: 'Smart checks',
-              desc: 'Pings with response time snapshots.',
+              title: "Smart checks",
+              desc: "Pings with response time snapshots.",
               Icon: Gauge,
             },
             {
-              title: 'Search & paginate',
-              desc: 'Find services quickly at any scale.',
-              Icon: SearchIcon,
+              title: "Downtime analytics",
+              desc: "Historical incident tracking and uptime statistics.",
+              Icon: Activity,
             },
             {
-              title: 'Logs ingestion',
-              desc: 'Send JSON logs via HTTP with HMAC.',
+              title: "Structured logs",
+              desc: "JSON log ingestion with filtering and real-time streaming.",
               Icon: FileDown,
             },
             {
-              title: 'AI quick fixes',
-              desc: 'Get actionable fixes from recent logs.',
+              title: "AI quick fixes",
+              desc: "Get actionable fixes from recent logs.",
               Icon: Wand2,
             },
             {
-              title: 'Notifications',
-              desc: 'Email alerts when incidents happen.',
+              title: "Notifications",
+              desc: "Email alerts when incidents happen.",
               Icon: Bell,
             },
           ].map(({ title, desc, Icon }) => (

@@ -1,15 +1,17 @@
 "use client"
 
-import useSWR from "swr"
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
-
-export function OverviewCard({ serviceId }: { serviceId: string }) {
-  const { data } = useSWR<{ items: { status: "up" | "down"; checked_at: string }[] }>(
-    `/api/services/${serviceId}/checks`,
-    fetcher,
-    { refreshInterval: 10000 },
-  )
+export function OverviewCard({ serviceId }: { serviceId: number }) {
+  const { data } = useQuery({
+    queryKey: ['health-checks', serviceId],
+    queryFn: () => apiClient.getHealthCheckHistory(serviceId, 100),
+    enabled: !!serviceId,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchInterval: 30 * 1000, // Refetch every 30 seconds (instead of 10)
+  });
 
   const latest = data?.items?.[0]
   const up = latest?.status === "up"
@@ -36,8 +38,15 @@ export function OverviewCard({ serviceId }: { serviceId: string }) {
   )
 }
 
-export function SummaryCard({ serviceId }: { serviceId: string }) {
-  const { data } = useSWR<{ items: { status: "up" | "down" }[] }>(`/api/services/${serviceId}/checks`, fetcher)
+export function SummaryCard({ serviceId }: { serviceId: number }) {
+  const { data } = useQuery({
+    queryKey: ['health-checks-summary', serviceId],
+    queryFn: () => apiClient.getHealthCheckHistory(serviceId, 100),
+    enabled: !!serviceId,
+    staleTime: 60 * 1000, // 1 minute
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchInterval: 60 * 1000, // Refetch every minute
+  });
 
   const total = data?.items?.length ?? 0
   const ups = data?.items?.filter((c) => c.status === "up").length ?? 0

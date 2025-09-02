@@ -1,8 +1,8 @@
-'use client';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/lib/hooks/use-auth';
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -22,16 +22,6 @@ export function SiteHeader() {
           <span className="text-primary">Ops</span>buddy
         </Link>
         <nav className="flex items-center gap-2">
-          {/* Only show Services link if user is authenticated and not on services pages */}
-          {isAuthenticated && !pathname?.startsWith('/services') && (
-            <Link
-              href="/services"
-              className="rounded-md px-3 py-2 text-sm hover:bg-muted text-foreground"
-            >
-              Services
-            </Link>
-          )}
-          
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
               {user && (
@@ -39,11 +29,7 @@ export function SiteHeader() {
                   {user.name}
                 </span>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-              >
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
                 Sign out
               </Button>
             </div>

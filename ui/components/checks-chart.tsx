@@ -1,23 +1,28 @@
 "use client"
 
-import useSWR from "swr"
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
 import { Line, LineChart, Tooltip, XAxis, YAxis, ResponsiveContainer } from "recharts"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
-
 export function ChecksChart({ serviceId }: { serviceId: string }) {
-  const { data } = useSWR<{ items: { checked_at: string; latency_ms: number; status: string }[] }>(
-    `/api/services/${serviceId}/checks`,
-    fetcher,
-    { refreshInterval: 10_000 },
-  )
+  const { data } = useQuery({
+    queryKey: ['health-checks-chart', serviceId],
+    queryFn: () => apiClient.getHealthCheckHistory(parseInt(serviceId), 100),
+    enabled: !!serviceId,
+    staleTime: 60 * 1000, // 1 minute
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchInterval: 60 * 1000, // Refetch every minute (instead of 10 seconds)
+  });
 
   const points =
     data?.items
       ?.slice()
       .reverse()
-      .map((c) => ({ t: new Date(c.checked_at).toLocaleTimeString(), latency: c.latency_ms || 0, status: c.status })) ??
-    []
+      .map((c) => ({ 
+        t: new Date(c.checked_at).toLocaleTimeString(), 
+        latency: c.response_time_ms || 0, 
+        status: c.status 
+      })) ?? []
 
   return (
     <div className="h-56 w-full rounded-lg border p-3">

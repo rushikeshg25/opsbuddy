@@ -4,45 +4,19 @@ import { SiteHeader } from "@/components/site-header";
 import { ServicesBrowser } from "@/components/services-browser";
 import { CreateServiceModal } from "@/components/create-service-modal";
 import { useRequireAuth } from "@/lib/hooks/use-auth";
-import { useEffect, useState } from "react";
+import { useProducts } from "@/lib/hooks/use-products";
 import { Button } from "@/components/ui/button";
 
 export default function ServicesPage() {
-  const { user, isLoading } = useRequireAuth();
-  const [products, setProducts] = useState([]);
-  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user, isLoading: authLoading } = useRequireAuth();
+  const { 
+    data: products = [], 
+    isLoading: isLoadingProducts, 
+    error, 
+    refetch: fetchProducts 
+  } = useProducts();
 
-  useEffect(() => {
-    if (!isLoading && user) {
-      fetchProducts();
-    }
-  }, [isLoading, user]);
-
-  const fetchProducts = async () => {
-    try {
-      setIsLoadingProducts(true);
-      setError(null);
-      
-      const response = await fetch("http://localhost:8080/api/products", {
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch products: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      setProducts(result.data || []);
-    } catch (error) {
-      console.error("Failed to fetch products:", error);
-      setError(error instanceof Error ? error.message : "Failed to fetch products");
-    } finally {
-      setIsLoadingProducts(false);
-    }
-  };
-
-  if (isLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -67,10 +41,10 @@ export default function ServicesPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <CreateServiceModal onServiceCreated={fetchProducts} />
+            <CreateServiceModal />
             <Button
               variant="outline"
-              onClick={fetchProducts}
+              onClick={() => fetchProducts()}
               disabled={isLoadingProducts}
             >
               {isLoadingProducts ? "Refreshing..." : "Refresh"}
@@ -80,7 +54,9 @@ export default function ServicesPage() {
 
         {error && (
           <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {error instanceof Error ? error.message : 'Failed to load services'}
+            </p>
           </div>
         )}
 
@@ -103,7 +79,7 @@ export default function ServicesPage() {
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
                   Get started by creating your first service to monitor.
                 </p>
-                <CreateServiceModal onServiceCreated={fetchProducts} />
+                <CreateServiceModal />
               </div>
             </div>
           )}

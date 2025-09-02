@@ -4,62 +4,46 @@ import { SiteHeader } from "@/components/site-header";
 import Link from "next/link";
 import { ServiceDetail } from "@/components/service-detail";
 import { useRequireAuth } from "@/lib/hooks/use-auth";
-import { useEffect, useState } from "react";
+import { useProduct } from "@/lib/hooks/use-products";
+import { useLogsRealtime } from "@/lib/hooks/use-logs";
+import { useRecentDowntime } from "@/lib/hooks/use-downtime";
+import { useUptimeStats24h, useUptimeStats7d, useUptimeStats30d } from "@/lib/hooks/use-analytics";
 import { useParams, useRouter } from "next/navigation";
 
-type Service = {
-  id: number;
-  name: string;
-  description: string;
-  user_id: number;
-  created_at: string;
-  auth_token: string;
-  health_api: string;
-};
-
 export default function ServicePage() {
-  const { user, isLoading } = useRequireAuth();
-  const [service, setService] = useState<Service | null>(null);
-  const [isLoadingService, setIsLoadingService] = useState(true);
+  const { user, isLoading: authLoading } = useRequireAuth();
   const params = useParams();
   const router = useRouter();
-  const serviceId = params.serviceId as string;
+  const serviceId = parseInt(params.serviceId as string);
+  
+  // Fetch service data
+  const { 
+    data: service, 
+    isLoading: isLoadingService, 
+    error 
+  } = useProduct(serviceId);
 
-  useEffect(() => {
-    if (!isLoading && user) {
-      fetchService();
-    }
-  }, [isLoading, user, serviceId]);
+  // Fetch real-time logs (last 50 entries, refresh every 30 seconds)
+  const { data: recentLogs, isLoading: isLoadingLogs } = useLogsRealtime({
+    product_id: serviceId,
+    limit: 50,
+  }, 30000);
 
-  const fetchService = async () => {
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/products/${serviceId}`,
-        {
-          credentials: "include",
-        }
-      );
+  // Fetch recent downtime incidents (last 30 days)
+  const { data: recentDowntime } = useRecentDowntime(serviceId, 30);
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          console.error("Product not found");
-        }
-        router.push("/services");
-        return;
-      }
+  // Fetch uptime statistics for different periods
+  const { data: uptime24h } = useUptimeStats24h(serviceId);
+  const { data: uptime7d } = useUptimeStats7d(serviceId);
+  const { data: uptime30d } = useUptimeStats30d(serviceId);
 
-      const result = await response.json();
-      // The API returns data in result.data format
-      setService(result.data);
-    } catch (error) {
-      console.error("Failed to fetch service:", error);
-      router.push("/services");
-    } finally {
-      setIsLoadingService(false);
-    }
-  };
+  // Redirect if service not found
+  if (error && 'status' in error && error.status === 404) {
+    router.push("/services");
+    return null;
+  }
 
-  if (isLoading || isLoadingService) {
+  if (authLoading || isLoadingService) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -92,7 +76,17 @@ export default function ServicePage() {
           </Link>{" "}
           / <span className="text-foreground">{service.name}</span>
         </div>
-        <ServiceDetail service={service} />
+        <ServiceDetail 
+          service={service} 
+          recentLogs={recentLogs}
+          recentDowntime={recentDowntime}
+          uptimeStats={{
+            uptime24h,
+            uptime7d,
+            uptime30d,
+          }}
+          isLoadingLogs={isLoadingLogs}
+        />
       </section>
     </main>
   );
