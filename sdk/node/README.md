@@ -5,7 +5,7 @@ A Node.js SDK for sending logs to OpsBuddy log ingestion service via gRPC.
 ## Installation
 
 ```bash
-npm install @opsbuddy/sdk
+npm install opsbuddy-sdk
 ```
 
 ## Usage
@@ -13,7 +13,7 @@ npm install @opsbuddy/sdk
 ### Basic Usage
 
 ```javascript
-import { OpsBuddySDK } from '@opsbuddy/sdk';
+import { OpsBuddySDK } from 'opsbuddy-sdk';
 
 const sdk = new OpsBuddySDK({
   serviceId: '123',
@@ -46,7 +46,7 @@ await sdk.ingestLogs([
 Automatically capture and send console logs:
 
 ```javascript
-import { OpsBuddySDK } from '@opsbuddy/sdk';
+import { OpsBuddySDK } from 'opsbuddy-sdk';
 
 const sdk = new OpsBuddySDK({
   serviceId: '123',
@@ -72,7 +72,7 @@ await sdk.close();
 
 ```javascript
 import express from 'express';
-import { OpsBuddySDK } from '@opsbuddy/sdk';
+import { OpsBuddySDK } from 'opsbuddy-sdk';
 
 const app = express();
 const sdk = new OpsBuddySDK({
