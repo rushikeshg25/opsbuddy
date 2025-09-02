@@ -271,9 +271,7 @@ func (ps *PingService) markServiceDown(productID uint) {
 
 		log.Printf("Recorded downtime for product %d", productID)
 	} else {
-		// Existing downtime record found
 		if !existingDowntime.IsNotificationSent {
-			// Get user email for notification
 			var product Product
 			if err := tx.Preload("User").First(&product, productID).Error; err != nil {
 				tx.Rollback()
@@ -281,7 +279,6 @@ func (ps *PingService) markServiceDown(productID uint) {
 				return
 			}
 
-			// Send notification to Kafka
 			if err := ps.kafkaProducer.SendNotification(ps.ctx, NotificationEvent{
 				ProductID: productID,
 				UserEmail: product.User.Email,
@@ -294,7 +291,6 @@ func (ps *PingService) markServiceDown(productID uint) {
 				return
 			}
 
-			// Update the record to mark notification as sent
 			existingDowntime.IsNotificationSent = true
 			if err := tx.Save(&existingDowntime).Error; err != nil {
 				tx.Rollback()
@@ -309,14 +305,13 @@ func (ps *PingService) markServiceDown(productID uint) {
 
 			log.Printf("Downtime notification sent for product %d", productID)
 		} else {
-			tx.Rollback() // No changes needed
+			tx.Rollback()
 			log.Printf("Product %d still down, notification already sent", productID)
 		}
 	}
 }
 
 func (ps *PingService) markServiceUp(productID uint) {
-	// Use transaction for database operations
 	tx := ps.db.GetDB().Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -338,10 +333,8 @@ func (ps *PingService) markServiceUp(productID uint) {
 		return
 	}
 
-	// Calculate downtime duration
 	downtimeDuration := now.Sub(downtime.StartTime)
 
-	// Update the downtime record
 	downtime.EndTime = &now
 	downtime.Status = "up"
 
@@ -351,14 +344,11 @@ func (ps *PingService) markServiceUp(productID uint) {
 		return
 	}
 
-	// Get user email for notification
 	var product Product
 	if err := tx.Preload("User").First(&product, productID).Error; err != nil {
 		log.Printf("Failed to get product and user info for recovery notification for product %d: %v", productID, err)
-		// Continue without user email - we'll handle this in notification service
 	}
 
-	// Send recovery notification to Kafka
 	if err := ps.kafkaProducer.SendNotification(ps.ctx, NotificationEvent{
 		ProductID: productID,
 		UserEmail: product.User.Email,
@@ -367,7 +357,6 @@ func (ps *PingService) markServiceUp(productID uint) {
 		Message:   fmt.Sprintf("Service %s is back up after %v downtime", product.Name, downtimeDuration),
 	}); err != nil {
 		log.Printf("Failed to send recovery notification for product %d: %v", productID, err)
-		// Don't rollback transaction for Kafka failures, just log
 	} else {
 		log.Printf("Recovery notification sent for product %d", productID)
 	}

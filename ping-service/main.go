@@ -15,7 +15,6 @@ import (
 // validateEnvironment checks that all required environment variables are set
 func validateEnvironment() error {
 	requiredVars := []string{
-		"DATABASE_URL",
 		"KAFKA_BROKERS",
 		"KAFKA_TOPIC",
 	}
