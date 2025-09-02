@@ -7,6 +7,7 @@
 
 OpsBuddy consists of several interconnected microservices:
 
+<img width="2691" height="1001" alt="image" src="https://github.com/user-attachments/assets/8ba09c36-7dbe-4897-bc5c-8004a685b844" />
 
 
 ## Features
