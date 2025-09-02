@@ -1,6 +1,8 @@
-module github.com/rushikeshg25/opsbuddy/sdk/go
+module github.com/opsbuddy/sdk-go
 
-go 1.24.6
+go 1.23.0
+
+toolchain go1.24.6
 
 require (
 	google.golang.org/grpc v1.75.0
