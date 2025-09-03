@@ -33,6 +33,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		controller.NewLogsController(db, api)
 		controller.NewDowntimeController(db, api)
 		controller.NewAnalyticsController(db, api)
+		controller.NewQuickFixesController(db, api)
 	}
 
 	controller.NewAuthController(db, r)

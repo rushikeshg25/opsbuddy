@@ -39,6 +39,7 @@ func main() {
 		&database.Product{},
 		&database.Log{},
 		&database.Downtime{},
+		&database.ProductQuickFix{},
 	); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
