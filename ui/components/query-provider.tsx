@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
@@ -7,7 +7,6 @@ interface QueryProviderProps {
   children: React.ReactNode;
 }
 
-// Create a function to make a new query client
 function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
@@ -44,10 +43,8 @@ let browserQueryClient: QueryClient | undefined = undefined;
 
 function getQueryClient() {
   if (typeof window === 'undefined') {
-    // Server: always make a new query client
     return makeQueryClient();
   } else {
-    // Browser: make a new query client if we don't already have one
     if (!browserQueryClient) browserQueryClient = makeQueryClient();
     return browserQueryClient;
   }
@@ -57,8 +54,6 @@ export const QueryProvider = ({ children }: QueryProviderProps) => {
   const [queryClient] = useState(() => getQueryClient());
 
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 };

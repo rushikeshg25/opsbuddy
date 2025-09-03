@@ -1,28 +1,27 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus } from "lucide-react";
-import { useCreateProduct } from "@/lib/hooks/use-products";
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus } from 'lucide-react';
+import { useCreateProduct } from '@/lib/hooks/use-products';
+import { toast } from 'sonner';
 
-interface CreateServiceModalProps {}
-
-export function CreateServiceModal({}: CreateServiceModalProps = {}) {
+export function CreateServiceModal() {
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [healthApi, setHealthApi] = useState("");
-  
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [healthApi, setHealthApi] = useState('');
+
   const createProduct = useCreateProduct();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,22 +34,22 @@ export function CreateServiceModal({}: CreateServiceModalProps = {}) {
         health_api: healthApi,
       });
 
-      // Reset form and close modal
-      setName("");
-      setDescription("");
-      setHealthApi("");
+      setName('');
+      setDescription('');
+      setHealthApi('');
       setOpen(false);
+      toast.success('Service created successfully');
     } catch (error) {
-      console.error("Error creating service:", error);
+      console.error('Error creating service:', error);
     }
   };
 
   const handleClose = () => {
     setOpen(false);
     createProduct.reset(); // Clear any previous errors
-    setName("");
-    setDescription("");
-    setHealthApi("");
+    setName('');
+    setDescription('');
+    setHealthApi('');
   };
 
   return (
@@ -69,8 +68,8 @@ export function CreateServiceModal({}: CreateServiceModalProps = {}) {
           {createProduct.error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
               <p className="text-sm text-red-600 dark:text-red-400">
-                {createProduct.error instanceof Error 
-                  ? createProduct.error.message 
+                {createProduct.error instanceof Error
+                  ? createProduct.error.message
                   : 'Failed to create service'}
               </p>
             </div>
@@ -93,13 +92,13 @@ export function CreateServiceModal({}: CreateServiceModalProps = {}) {
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of your service"
+              placeholder="Brief description of your service (Will be used as context to LLM)"
               rows={3}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="healthApi">Health Check URL</Label>
+            <Label htmlFor="healthApi">Health Check URL *</Label>
             <Input
               id="healthApi"
               type="url"
@@ -118,8 +117,13 @@ export function CreateServiceModal({}: CreateServiceModalProps = {}) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createProduct.isPending || !name.trim()}>
-              {createProduct.isPending ? "Creating..." : "Create Service"}
+            <Button
+              type="submit"
+              disabled={
+                createProduct.isPending || !name.trim() || !healthApi.trim()
+              }
+            >
+              {createProduct.isPending ? 'Creating...' : 'Create Service'}
             </Button>
           </div>
         </form>

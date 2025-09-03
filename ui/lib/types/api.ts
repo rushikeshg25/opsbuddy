@@ -47,7 +47,7 @@ export interface Log {
   id: number;
   product_id: number;
   log_data: string;
-  timestamp: string;
+  Timestamp: string;
 }
 
 export interface LogsResponse {
@@ -66,13 +66,38 @@ export interface LogsQuery {
   level?: string;
 }
 
+export interface Quickfix {
+  id: number;
+  product_id: number;
+  downtime_id: number;
+  title: string;
+  description: string;
+  created_at: string;
+}
+
+export interface QuickFixesQuery {
+  product_id: number;
+  page?: number;
+  limit?: number;
+  start_date?: string;
+  end_date?: string;
+  level?: string;
+}
+
+export interface QuickFixesResponse {
+  quickfixes: Quickfix[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 // Downtime Types
 export interface Downtime {
   id: number;
   product_id: number;
   start_time: string;
   end_time?: string;
-  status: 'down' | 'degraded';
+  status: "down" | "degraded";
   is_notification_sent: boolean;
 }
 
@@ -80,7 +105,7 @@ export interface DowntimeQuery {
   product_id: number;
   start_date?: string;
   end_date?: string;
-  status?: 'down' | 'degraded';
+  status?: "down" | "degraded";
 }
 
 // Analytics Types
@@ -95,7 +120,7 @@ export interface UptimeStats {
 
 export interface AnalyticsQuery {
   product_id: number;
-  period?: '24h' | '7d' | '30d' | '90d';
+  period?: "24h" | "7d" | "30d" | "90d";
   start_date?: string;
   end_date?: string;
 }
@@ -103,7 +128,7 @@ export interface AnalyticsQuery {
 // Health Check Types
 export interface HealthCheckResult {
   product_id: number;
-  status: 'up' | 'down' | 'degraded';
+  status: "up" | "down" | "degraded";
   response_time_ms?: number;
   status_code?: number;
   error_message?: string;
@@ -116,3 +141,20 @@ export interface ApiError {
   message: string;
   details?: any;
 }
+
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
+export interface NetworkError {
+  type: "network" | "timeout" | "abort";
+  message: string;
+}
+
+export interface AuthError {
+  type: "unauthorized" | "forbidden" | "expired";
+  message: string;
+}
+
+export type AppError = ApiError | ValidationError | NetworkError | AuthError;

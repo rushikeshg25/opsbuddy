@@ -1,32 +1,24 @@
-"use client";
+'use client';
 
-import { SiteHeader } from "@/components/site-header";
-import { ServicesBrowser } from "@/components/services-browser";
-import { CreateServiceModal } from "@/components/create-service-modal";
-import { useRequireAuth } from "@/lib/hooks/use-auth";
-import { useProducts } from "@/lib/hooks/use-products";
-import { Button } from "@/components/ui/button";
+import { SiteHeader } from '@/components/site-header';
+import { ServicesBrowser } from '@/components/services-browser';
+import { CreateServiceModal } from '@/components/create-service-modal';
+import { useRequireAuth } from '@/lib/hooks/use-auth';
+import { useProducts } from '@/lib/hooks/use-products';
+import { Button } from '@/components/ui/button';
+import { LoadingPage, LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function ServicesPage() {
   const { user, isLoading: authLoading } = useRequireAuth();
-  const { 
-    data: products = [], 
-    isLoading: isLoadingProducts, 
-    error, 
-    refetch: fetchProducts 
+  const {
+    data: products = [],
+    isLoading: isLoadingProducts,
+    error,
+    refetch: fetchProducts,
   } = useProducts();
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Loading...
-          </p>
-        </div>
-      </div>
-    );
+    return <LoadingPage text="Authenticating..." />;
   }
 
   return (
@@ -35,9 +27,11 @@ export default function ServicesPage() {
       <section className="mx-auto max-w-6xl px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Your services</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Your services
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Search, paginate, and add more endpoints to monitor.
+              Search, paginate, and add more services to monitor.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -47,7 +41,7 @@ export default function ServicesPage() {
               onClick={() => fetchProducts()}
               disabled={isLoadingProducts}
             >
-              {isLoadingProducts ? "Refreshing..." : "Refresh"}
+              {isLoadingProducts ? 'Refreshing...' : 'Refresh'}
             </Button>
           </div>
         </div>
@@ -55,7 +49,9 @@ export default function ServicesPage() {
         {error && (
           <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
             <p className="text-sm text-red-600 dark:text-red-400">
-              {error instanceof Error ? error.message : 'Failed to load services'}
+              {error instanceof Error
+                ? error.message
+                : 'Failed to load services'}
             </p>
           </div>
         )}
@@ -63,10 +59,7 @@ export default function ServicesPage() {
         <div className="mt-6">
           {isLoadingProducts ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 dark:border-white mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                Loading products...
-              </p>
+              <LoadingSpinner text="Loading products..." />
             </div>
           ) : products.length > 0 ? (
             <ServicesBrowser products={products} />

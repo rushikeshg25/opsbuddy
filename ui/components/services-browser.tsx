@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from './status-badge';
-import { UptimeSparkline } from './uptime-sparkline';
+import { useRecentDowntime } from '@/lib/hooks/use-downtime';
+import { useUptimeStats24h } from '@/lib/hooks/use-analytics';
 
 type Service = {
   id: number;
@@ -21,21 +22,49 @@ interface ServicesBrowserProps {
   products?: Service[];
 }
 
+const getCurrentServiceStatus = (
+  serviceId: number,
+  recentDowntime?: any[],
+  uptimeStats?: any
+): 'up' | 'down' | 'degraded' => {
+  const ongoingIncidents =
+    recentDowntime?.filter((incident) => !incident.end_time) || [];
+
+  if (ongoingIncidents.length > 0) {
+    if (ongoingIncidents.some((incident) => incident.status === 'down')) {
+      return 'down';
+    }
+    if (ongoingIncidents.some((incident) => incident.status === 'degraded')) {
+      return 'degraded';
+    }
+  }
+
+  const recentUptime = uptimeStats?.uptime_percentage;
+  if (recentUptime !== undefined) {
+    if (recentUptime < 95) {
+      return 'down';
+    } else if (recentUptime < 99) {
+      return 'degraded';
+    }
+  }
+
+  return 'up';
+};
+
 export function ServicesBrowser({ products = [] }: ServicesBrowserProps) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 6;
 
-  // Filter products based on search
   const filteredProducts = useMemo(() => {
     if (!search) return products;
-    return products.filter(product => 
-      product.name.toLowerCase().includes(search.toLowerCase()) ||
-      product.description.toLowerCase().includes(search.toLowerCase())
+    return products.filter(
+      (product) =>
+        product.name.toLowerCase().includes(search.toLowerCase()) ||
+        product.description.toLowerCase().includes(search.toLowerCase())
     );
   }, [products, search]);
 
-  // Paginate filtered products
   const paginatedProducts = useMemo(() => {
     const startIndex = (page - 1) * pageSize;
     return filteredProducts.slice(startIndex, startIndex + pageSize);
@@ -59,44 +88,16 @@ export function ServicesBrowser({ products = [] }: ServicesBrowserProps) {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {paginatedProducts.map((product) => (
-          <Card key={product.id} className="group">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <Link
-                    href={`/services/${product.id}`}
-                    className="text-base font-medium hover:text-primary"
-                  >
-                    {product.name}
-                  </Link>
-                  <div className="text-xs text-muted-foreground">
-                    {product.description}
-                  </div>
-                  {product.health_api && (
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Health API: {product.health_api}
-                    </div>
-                  )}
-                </div>
-                <StatusBadge status="up" />
-              </div>
-              <div className="mt-3">
-                <UptimeSparkline serviceId={product.id.toString()} />
-              </div>
-              <div className="mt-2 text-xs text-muted-foreground">
-                Created: {new Date(product.created_at).toLocaleString()}
-              </div>
-            </CardContent>
-          </Card>
+          <ServiceCard key={product.id} product={product} />
         ))}
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-muted-foreground text-center sm:text-left">
             Page {page} of {totalPages} ({filteredProducts.length} total)
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -120,4 +121,43 @@ export function ServicesBrowser({ products = [] }: ServicesBrowserProps) {
   );
 }
 
+function ServiceCard({ product }: { product: Service }) {
+  const { data: recentDowntime } = useRecentDowntime(product.id, 30);
+  const { data: uptimeStats } = useUptimeStats24h(product.id);
 
+  const currentStatus = getCurrentServiceStatus(
+    product.id,
+    recentDowntime,
+    uptimeStats
+  );
+
+  return (
+    <Card className="group">
+      <CardContent className="p-4 ">
+        <div className="flex items-start justify-between gap-5">
+          <div>
+            <Link
+              href={`/services/${product.id}`}
+              className="text-base font-medium hover:text-primary"
+            >
+              {product.name}
+            </Link>
+            <div className="text-xs text-muted-foreground">
+              {product.description}
+            </div>
+            {product.health_api && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Health API: {product.health_api}
+              </div>
+            )}
+          </div>
+          <StatusBadge status={currentStatus} />
+        </div>
+
+        <div className=" text-xs text-muted-foreground">
+          Created: {new Date(product.created_at).toLocaleString()}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

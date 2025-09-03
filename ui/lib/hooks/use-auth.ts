@@ -16,7 +16,6 @@ export const useAuth = () => {
     refreshAuth,
   } = useAuthStore();
 
-  // Initialize auth check on first load
   useEffect(() => {
     if (!isInitialized) {
       checkAuth();
@@ -32,7 +31,6 @@ export const useAuth = () => {
     logout,
     checkAuth,
     refreshAuth,
-    // Helper methods
     setUser,
     setLoading,
   };
@@ -57,7 +55,6 @@ export const useRequireAuth = () => {
   };
 };
 
-// Hook for guest routes (redirect if authenticated)
 export const useRequireGuest = () => {
   const router = useRouter();
   const { isAuthenticated, isLoading, isInitialized } = useAuth();

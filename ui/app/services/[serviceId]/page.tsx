@@ -1,33 +1,54 @@
-"use client";
+'use client';
 
-import { SiteHeader } from "@/components/site-header";
-import Link from "next/link";
-import { ServiceDetail } from "@/components/service-detail";
-import { useRequireAuth } from "@/lib/hooks/use-auth";
-import { useProduct } from "@/lib/hooks/use-products";
-import { useLogsRealtime } from "@/lib/hooks/use-logs";
-import { useRecentDowntime } from "@/lib/hooks/use-downtime";
-import { useUptimeStats24h, useUptimeStats7d, useUptimeStats30d } from "@/lib/hooks/use-analytics";
-import { useParams, useRouter } from "next/navigation";
+import { SiteHeader } from '@/components/site-header';
+import Link from 'next/link';
+import { ServiceDetail } from '@/components/service-detail';
+import { useRequireAuth } from '@/lib/hooks/use-auth';
+import { useProduct } from '@/lib/hooks/use-products';
+import { useLogsRealtime } from '@/lib/hooks/use-logs';
+import { useRecentDowntime } from '@/lib/hooks/use-downtime';
+import {
+  useUptimeStats24h,
+  useUptimeStats7d,
+  useUptimeStats30d,
+} from '@/lib/hooks/use-analytics';
+import { useParams, useRouter } from 'next/navigation';
+import { useQuickFixes } from '@/lib/hooks/use-quickfixes';
+import { useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
 
 export default function ServicePage() {
   const { user, isLoading: authLoading } = useRequireAuth();
   const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const serviceId = parseInt(params.serviceId as string);
-  
+
   // Fetch service data
-  const { 
-    data: service, 
-    isLoading: isLoadingService, 
-    error 
+  const {
+    data: service,
+    isLoading: isLoadingService,
+    error,
   } = useProduct(serviceId);
 
-  // Fetch real-time logs (last 50 entries, refresh every 30 seconds)
-  const { data: recentLogs, isLoading: isLoadingLogs } = useLogsRealtime({
-    product_id: serviceId,
-    limit: 50,
-  }, 30000);
+  const {
+    data: recentLogs,
+    isLoading: isLoadingLogs,
+    error: logsError,
+  } = useLogsRealtime(
+    {
+      product_id: serviceId,
+      limit: 50,
+    },
+    30000
+  );
+
+  const {
+    data: quickfixesData,
+    isLoading: isLoadingQuickfixes,
+    error: quickfixesError,
+  } = useQuickFixes({ product_id: serviceId });
 
   // Fetch recent downtime incidents (last 30 days)
   const { data: recentDowntime } = useRecentDowntime(serviceId, 30);
@@ -37,9 +58,34 @@ export default function ServicePage() {
   const { data: uptime7d } = useUptimeStats7d(serviceId);
   const { data: uptime30d } = useUptimeStats30d(serviceId);
 
+  // Refresh function to invalidate all queries
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      // Invalidate all queries related to this service
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['products', serviceId] }),
+        queryClient.invalidateQueries({
+          queryKey: ['logs', { product_id: serviceId }],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['downtime', { productId: serviceId, days: 30 }],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['uptime-stats', serviceId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['quick-fixes', { product_id: serviceId }],
+        }),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [queryClient, serviceId]);
+
   // Redirect if service not found
   if (error && 'status' in error && error.status === 404) {
-    router.push("/services");
+    router.push('/services');
     return null;
   }
 
@@ -73,11 +119,11 @@ export default function ServicePage() {
         <div className="mb-4 text-sm text-muted-foreground">
           <Link href="/services" className="hover:text-foreground">
             Services
-          </Link>{" "}
-          / <span className="text-foreground">{service.name}</span>
+          </Link>{' '}
+          / <span className="text-primary">{service.name}</span>
         </div>
-        <ServiceDetail 
-          service={service} 
+        <ServiceDetail
+          service={service}
           recentLogs={recentLogs}
           recentDowntime={recentDowntime}
           uptimeStats={{
@@ -86,6 +132,12 @@ export default function ServicePage() {
             uptime30d,
           }}
           isLoadingLogs={isLoadingLogs}
+          logsError={logsError || undefined}
+          quickfixes={quickfixesData}
+          isLoadingQuickfixes={isLoadingQuickfixes}
+          quickfixesError={quickfixesError || undefined}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
         />
       </section>
     </main>
