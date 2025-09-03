@@ -97,5 +97,5 @@ func (s *service) Close() error {
 }
 
 func (s *service) migrate() error {
-	return s.db.AutoMigrate(&User{}, &Product{}, &Log{}, &Downtime{})
+	return s.db.AutoMigrate(&User{}, &Product{}, &Log{}, &Downtime{}, &ProductQuickFix{})
 }
