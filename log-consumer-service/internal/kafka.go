@@ -9,7 +9,6 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-// ConsumerConfig holds configuration for the Kafka consumer
 type ConsumerConfig struct {
 	Brokers         []string
 	Topic           string
@@ -36,7 +35,6 @@ func DefaultConsumerConfig() ConsumerConfig {
 	}
 }
 
-// Consumer represents a Kafka consumer with enhanced features
 type Consumer struct {
 	reader *kafka.Reader
 	config ConsumerConfig
@@ -45,7 +43,6 @@ type Consumer struct {
 	done   chan struct{}
 }
 
-// NewConsumer creates a new consumer with the given configuration
 func NewConsumer(brokers []string, topic, groupID string) *Consumer {
 	config := DefaultConsumerConfig()
 	config.Brokers = brokers
@@ -62,7 +59,6 @@ func NewConsumer(brokers []string, topic, groupID string) *Consumer {
 	}
 }
 
-// NewConsumerWithConfig creates a new consumer with custom configuration
 func NewConsumerWithConfig(config ConsumerConfig) *Consumer {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -74,7 +70,6 @@ func NewConsumerWithConfig(config ConsumerConfig) *Consumer {
 	}
 }
 
-// initializeReader creates and configures the Kafka reader
 func (c *Consumer) initializeReader() error {
 	c.reader = kafka.NewReader(kafka.ReaderConfig{
 		Brokers:         c.config.Brokers,
@@ -91,7 +86,6 @@ func (c *Consumer) initializeReader() error {
 	return nil
 }
 
-// Read starts reading messages with enhanced error handling and retry logic
 func (c *Consumer) Read(ctx context.Context, handler func(key, value string)) error {
 	if err := c.initializeReader(); err != nil {
 		return fmt.Errorf("failed to initialize reader: %w", err)
@@ -154,7 +148,6 @@ func (c *Consumer) Read(ctx context.Context, handler func(key, value string)) er
 	}
 }
 
-// Close gracefully shuts down the consumer
 func (c *Consumer) Close() error {
 	log.Println("Closing Kafka consumer...")
 
@@ -175,12 +168,10 @@ func (c *Consumer) Close() error {
 	return nil
 }
 
-// Wait waits for the consumer to complete shutdown
 func (c *Consumer) Wait() {
 	<-c.done
 }
 
-// GetStats returns consumer statistics
 func (c *Consumer) GetStats() (kafka.ReaderStats, error) {
 	if c.reader == nil {
 		return kafka.ReaderStats{}, fmt.Errorf("reader not initialized")
@@ -188,13 +179,11 @@ func (c *Consumer) GetStats() (kafka.ReaderStats, error) {
 	return c.reader.Stats(), nil
 }
 
-// IsHealthy checks if the consumer is healthy
 func (c *Consumer) IsHealthy() bool {
 	if c.reader == nil {
 		return false
 	}
 
-	// Check if we can get stats (indicates reader is working)
 	_, err := c.GetStats()
 	return err == nil
 }

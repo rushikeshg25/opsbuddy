@@ -12,7 +12,6 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// DatabaseConfig holds database configuration
 type DatabaseConfig struct {
 	DSN                string
 	MaxOpenConns       int

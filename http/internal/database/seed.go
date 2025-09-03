@@ -27,7 +27,7 @@ func SeedData(db *gorm.DB) error {
 				Provider:    "google",
 				ProviderID:  "123456789",
 				AccessToken: "dummy_token",
-				CreatedAt:   time.Now().AddDate(0, -2, 0), 
+				CreatedAt:   time.Now().AddDate(0, -2, 0),
 				UpdatedAt:   time.Now(),
 			}
 			if err := db.Create(&user).Error; err != nil {
@@ -123,21 +123,21 @@ func seedLogs(db *gorm.DB, productID uint) error {
 	now := time.Now()
 	for i := 0; i < 30; i++ {
 		day := now.AddDate(0, 0, -i)
-		
+
 		// Generate 10-50 logs per day
 		logsPerDay := rand.Intn(40) + 10
-		
+
 		for j := 0; j < logsPerDay; j++ {
 			// Random time during the day
 			hour := rand.Intn(24)
 			minute := rand.Intn(60)
 			second := rand.Intn(60)
-			
+
 			logTime := time.Date(day.Year(), day.Month(), day.Day(), hour, minute, second, 0, time.UTC)
-			
+
 			level := logLevels[rand.Intn(len(logLevels))]
 			message := logMessages[rand.Intn(len(logMessages))]
-			
+
 			// Create structured log data
 			logEntry := map[string]interface{}{
 				"timestamp": logTime.Format(time.RFC3339),
@@ -146,7 +146,7 @@ func seedLogs(db *gorm.DB, productID uint) error {
 				"service":   fmt.Sprintf("product-%d", productID),
 				"trace_id":  uuid.New().String()[:8],
 			}
-			
+
 			// Add extra fields based on log level
 			switch level {
 			case "error":
@@ -158,21 +158,21 @@ func seedLogs(db *gorm.DB, productID uint) error {
 				logEntry["request_id"] = uuid.New().String()[:12]
 				logEntry["duration_ms"] = rand.Intn(1000) + 50
 			}
-			
+
 			logDataBytes, _ := json.Marshal(logEntry)
-			
+
 			log := Log{
 				ProductID: productID,
 				LogData:   string(logDataBytes),
 				Timestamp: logTime,
 			}
-			
+
 			if err := db.Create(&log).Error; err != nil {
 				return fmt.Errorf("failed to create log entry: %w", err)
 			}
 		}
 	}
-	
+
 	log.Printf("Created logs for product %d", productID)
 	return nil
 }
@@ -186,27 +186,27 @@ func seedDowntime(db *gorm.DB, productID uint) error {
 	}
 
 	now := time.Now()
-	
+
 	// Create 3-5 downtime incidents over the last 90 days
 	numIncidents := rand.Intn(3) + 3
-	
+
 	for i := 0; i < numIncidents; i++ {
 		// Random day in the last 90 days
 		daysAgo := rand.Intn(90) + 1
 		incidentDay := now.AddDate(0, 0, -daysAgo)
-		
+
 		startHour := rand.Intn(24)
 		startMinute := rand.Intn(60)
-		startTime := time.Date(incidentDay.Year(), incidentDay.Month(), incidentDay.Day(), 
+		startTime := time.Date(incidentDay.Year(), incidentDay.Month(), incidentDay.Day(),
 			startHour, startMinute, 0, 0, time.UTC)
-		
+
 		durationMinutes := rand.Intn(235) + 5
 		endTime := startTime.Add(time.Duration(durationMinutes) * time.Minute)
-		
+
 		// Random status
 		statuses := []string{"down", "degraded"}
 		status := statuses[rand.Intn(len(statuses))]
-		
+
 		downtime := Downtime{
 			ProductID:          productID,
 			StartTime:          startTime,
@@ -214,16 +214,16 @@ func seedDowntime(db *gorm.DB, productID uint) error {
 			Status:             status,
 			IsNotificationSent: true,
 		}
-		
+
 		if err := db.Create(&downtime).Error; err != nil {
 			return fmt.Errorf("failed to create downtime record: %w", err)
 		}
 	}
-	
+
 	// Create one ongoing incident (no end time) with 10% probability
 	if rand.Float32() < 0.1 {
 		recentTime := now.Add(-time.Duration(rand.Intn(120)) * time.Minute) // Within last 2 hours
-		
+
 		ongoingDowntime := Downtime{
 			ProductID:          productID,
 			StartTime:          recentTime,
@@ -231,14 +231,14 @@ func seedDowntime(db *gorm.DB, productID uint) error {
 			Status:             "down",
 			IsNotificationSent: true,
 		}
-		
+
 		if err := db.Create(&ongoingDowntime).Error; err != nil {
 			return fmt.Errorf("failed to create ongoing downtime record: %w", err)
 		}
-		
+
 		log.Printf("Created ongoing downtime incident for product %d", productID)
 	}
-	
+
 	log.Printf("Created downtime records for product %d", productID)
 	return nil
 }

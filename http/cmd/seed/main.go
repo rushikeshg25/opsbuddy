@@ -32,7 +32,7 @@ func main() {
 	// Run migrations first to ensure tables exist
 	log.Println("Running database migrations...")
 	gormDB := db.GetDB()
-	
+
 	// Auto-migrate all models
 	if err := gormDB.AutoMigrate(
 		&database.User{},
