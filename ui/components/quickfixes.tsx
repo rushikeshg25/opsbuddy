@@ -278,21 +278,6 @@ function QuickfixCard({
               </Button>
             )}
           </div>
-
-          <div className="flex items-center justify-between pt-2 border-t">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span className="text-xs text-muted-foreground">
-                Ready to apply
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
-                View Details
-              </Button>
-              <Button size="sm">Apply Fix</Button>
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>

@@ -18,17 +18,10 @@ const StatusPanel = ({
 }: StatusPanelProps) => {
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-0">
         <CardTitle className="text-lg">Service Status</CardTitle>
       </CardHeader>
-      <CardContent className="p-6 pt-0">
-        <div className="grid gap-6 md:grid-cols-2">
-          <div>
-            <h3 className="text-sm font-medium mb-3">Current Status</h3>
-            <OverviewCard serviceId={service.id} />
-          </div>
-        </div>
-
+      <CardContent className="pt-0">
         <Status
           service={service}
           uptimePercentage={uptimePercentage}

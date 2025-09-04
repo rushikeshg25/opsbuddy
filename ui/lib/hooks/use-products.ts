@@ -1,12 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { Product, CreateProductRequest, UpdateProductRequest } from '@/lib/types/api';
+import {
+  Product,
+  CreateProductRequest,
+  UpdateProductRequest,
+} from '@/lib/types/api';
 
 // Query Keys
 export const productKeys = {
   all: ['products'] as const,
   lists: () => [...productKeys.all, 'list'] as const,
-  list: (filters: Record<string, any>) => [...productKeys.lists(), { filters }] as const,
+  list: (filters: Record<string, any>) =>
+    [...productKeys.lists(), { filters }] as const,
   details: () => [...productKeys.all, 'detail'] as const,
   detail: (id: number) => [...productKeys.details(), id] as const,
 };
@@ -37,7 +42,7 @@ export const useCreateProduct = () => {
     onSuccess: (newProduct) => {
       // Invalidate and refetch products list
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
-      
+
       // Add the new product to the cache
       queryClient.setQueryData(productKeys.detail(newProduct.id), newProduct);
     },
@@ -52,15 +57,21 @@ export const useUpdateProduct = () => {
       apiClient.updateProduct(id, data),
     onSuccess: (updatedProduct) => {
       // Update the specific product in cache
-      queryClient.setQueryData(productKeys.detail(updatedProduct.id), updatedProduct);
-      
+      queryClient.setQueryData(
+        productKeys.detail(updatedProduct.id),
+        updatedProduct
+      );
+
       // Update the product in the list cache
-      queryClient.setQueryData(productKeys.lists(), (oldData: Product[] | undefined) => {
-        if (!oldData) return oldData;
-        return oldData.map((product) =>
-          product.id === updatedProduct.id ? updatedProduct : product
-        );
-      });
+      queryClient.setQueryData(
+        productKeys.lists(),
+        (oldData: Product[] | undefined) => {
+          if (!oldData) return oldData;
+          return oldData.map((product) =>
+            product.id === updatedProduct.id ? updatedProduct : product
+          );
+        }
+      );
     },
   });
 };
@@ -72,11 +83,14 @@ export const useDeleteProduct = () => {
     mutationFn: (id: number) => apiClient.deleteProduct(id),
     onSuccess: (_, deletedId) => {
       // Remove from products list
-      queryClient.setQueryData(productKeys.lists(), (oldData: Product[] | undefined) => {
-        if (!oldData) return oldData;
-        return oldData.filter((product) => product.id !== deletedId);
-      });
-      
+      queryClient.setQueryData(
+        productKeys.lists(),
+        (oldData: Product[] | undefined) => {
+          if (!oldData) return oldData;
+          return oldData.filter((product) => product.id !== deletedId);
+        }
+      );
+
       // Remove the specific product from cache
       queryClient.removeQueries({ queryKey: productKeys.detail(deletedId) });
     },

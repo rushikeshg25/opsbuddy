@@ -57,7 +57,7 @@ export default function Status({
   });
 
   return (
-    <div className="mt-6">
+    <div className="">
       <div className="flex items-center justify-between text-sm mb-2">
         <div className="flex items-center gap-2">
           <span
