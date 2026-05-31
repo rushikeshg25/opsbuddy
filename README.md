@@ -22,6 +22,7 @@ OpsBuddy consists of several interconnected microservices:
 - **Intelligent Quick Fixes**: Gemini AI analyzes logs to suggest actionable solutions
 - **Pattern Recognition**: Identifies common failure patterns (DB timeouts, memory issues, etc.)
 - **Context-Aware Suggestions**: Uses service descriptions for targeted recommendations
+- **Ask OpsBuddy Agent**: Conversational agent (`agent-service`) that answers questions about your services by calling read-only tools over your logs, downtime history, quick fixes and uptime analytics. Streams responses to the dashboard. Gemini-backed behind a swappable `LLMProvider` interface.
 
 ### Alerting & Notifications
 - **Email Notifications**: Instant alerts for service down/up events
@@ -48,7 +49,8 @@ opsbuddy/
 │   ├── notification-service/     # AI analysis & alerts
 │   ├── log-consumer-service/     # Log processing
 │   ├── log-ingestion-service/    # gRPC log ingestion
-│   └── http/                     # REST API service
+│   ├── http/                     # REST API service
+│   └── agent-service/            # Conversational AI agent (Ask OpsBuddy)
 ├── ui/                           # Frontend dashboard
 ├── scripts/                      # Install Postgres extensions and creation Kafka topics
 ├── docker-compose.yml            # Infrastructure setup
