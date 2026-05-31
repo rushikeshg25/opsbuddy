@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from './status-badge';
 import { useRecentDowntime } from '@/lib/hooks/use-downtime';
 import { useUptimeStats24h } from '@/lib/hooks/use-analytics';
+import { AgentChat } from './agent-chat';
 
 type Service = {
   id: number;
@@ -117,6 +118,8 @@ export function ServicesBrowser({ products = [] }: ServicesBrowserProps) {
           </div>
         </div>
       )}
+
+      <AgentChat />
     </div>
   );
 }
