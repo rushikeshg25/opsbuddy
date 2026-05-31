@@ -23,10 +23,6 @@ func (s *QuickFixesService) GetQuickFixes(productID uint, limit, page int, level
 
 	query := s.db.Model(&database.ProductQuickFix{}).Where("product_id = ?", productID)
 
-	if level != "" {
-		query = query.Where("log_data LIKE ?", "%\"level\":\""+level+"\"%")
-	}
-
 	if startDate != "" {
 		if parsedDate, err := time.Parse(time.RFC3339, startDate); err == nil {
 			query = query.Where("created_at >= ?", parsedDate)
