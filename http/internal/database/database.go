@@ -44,7 +44,6 @@ func New() Service {
 
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&search_path=%s",
 		username, password, host, port, database, schema)
-	fmt.Println(connStr)
 	db, err := gorm.Open(postgres.Open(connStr), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})

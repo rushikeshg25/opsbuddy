@@ -22,7 +22,10 @@ type LogBatch struct {
 }
 
 func NewProcessor() (*Processor, error) {
-	redis := NewRedisClient()
+	redis, err := NewRedisClient()
+	if err != nil {
+		return nil, err
+	}
 
 	db, err := NewDatabase()
 	if err != nil {

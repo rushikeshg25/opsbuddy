@@ -14,12 +14,12 @@ type Redis struct {
 	TTL    time.Duration
 }
 
-func NewRedisClient() *Redis {
+func NewRedisClient() (*Redis, error) {
 	if os.Getenv("REDIS_HOST") == "" {
-		panic("REDIS_HOST environment variable not set")
+		return nil, fmt.Errorf("REDIS_HOST environment variable not set")
 	}
 	if os.Getenv("REDIS_PORT") == "" {
-		panic("REDIS_PORT environment variable not set")
+		return nil, fmt.Errorf("REDIS_PORT environment variable not set")
 	}
 	rdb := redis.NewClient(
 		&redis.Options{
@@ -31,7 +31,7 @@ func NewRedisClient() *Redis {
 	return &Redis{
 		client: rdb,
 		TTL:    15 * time.Minute, // Cache auth tokens for 15 minutes
-	}
+	}, nil
 }
 
 func (r *Redis) Get(key string, ctx context.Context) (string, error) {

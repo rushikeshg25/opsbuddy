@@ -25,12 +25,12 @@ func NewDatabase() (*Database, error) {
 
 	user := os.Getenv("DB_USER")
 	if user == "" {
-		user = "rushikesh"
+		return nil, fmt.Errorf("DB_USER environment variable not set")
 	}
 
 	password := os.Getenv("DB_PASSWORD")
 	if password == "" {
-		password = "password"
+		return nil, fmt.Errorf("DB_PASSWORD environment variable not set")
 	}
 
 	dbname := os.Getenv("DB_NAME")
