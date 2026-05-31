@@ -18,10 +18,17 @@ type Database struct {
 func NewDatabase() (*Database, error) {
 	host := getEnvOrDefault("DB_HOST", "localhost")
 	port := getEnvOrDefault("DB_PORT", "5433")
-	user := getEnvOrDefault("DB_USER", "postgres")
-	password := getEnvOrDefault("DB_PASSWORD", "password")
 	dbname := getEnvOrDefault("DB_NAME", "opsbuddy")
 	sslmode := getEnvOrDefault("DB_SSLMODE", "disable")
+
+	user := os.Getenv("DB_USER")
+	if user == "" {
+		return nil, fmt.Errorf("DB_USER environment variable not set")
+	}
+	password := os.Getenv("DB_PASSWORD")
+	if password == "" {
+		return nil, fmt.Errorf("DB_PASSWORD environment variable not set")
+	}
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 		host, user, password, dbname, port, sslmode)
