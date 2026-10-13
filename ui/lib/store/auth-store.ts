@@ -1,3 +1,5 @@
+const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+let checkingAuth = false;
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -57,14 +59,14 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       login: () => {
-        window.location.href = 'http://localhost:8080/auth/google';
+        window.location.href = `${API_ORIGIN}/auth/google`;
       },
 
       logout: async () => {
         set({ isLoading: true });
         
         try {
-          const response = await fetch('http://localhost:8080/auth/logout', {
+          const response = await fetch(`${API_ORIGIN}/auth/logout`, {
             method: 'POST',
             credentials: 'include'
           });
@@ -95,12 +97,13 @@ export const useAuthStore = create<AuthStore>()(
 
       checkAuth: async () => {
         const state = get();
-        if (state.isInitialized) return;
+        if (state.isInitialized || checkingAuth) return;
+        checkingAuth = true;
         
         set({ isLoading: true });
         
         try {
-          const response = await fetch('http://localhost:8080/api/me', {
+          const response = await fetch(`${API_ORIGIN}/api/me`, {
             credentials: 'include'
           });
 
@@ -130,14 +133,14 @@ export const useAuthStore = create<AuthStore>()(
             isLoading: false,
             isInitialized: true,
           });
-        }
+        } finally { checkingAuth = false; }
       },
 
       refreshAuth: async () => {
         set({ isLoading: true });
         
         try {
-          const response = await fetch('http://localhost:8080/api/me', {
+          const response = await fetch(`${API_ORIGIN}/api/me`, {
             credentials: 'include'
           });
 

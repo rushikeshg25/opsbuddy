@@ -22,6 +22,7 @@ export default function ServicePage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [fixPage, setFixPage] = useState(1);
   const [logPage, setLogPage] = useState(1);
   const [activeTab, setActiveTab] = useState('overview');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -51,7 +52,7 @@ export default function ServicePage() {
     data: quickfixesData,
     isLoading: isLoadingQuickfixes,
     error: quickfixesError,
-  } = useQuickFixes({ product_id: serviceId }, activeTab === 'quickfixes');
+  } = useQuickFixes({ product_id: serviceId, page: fixPage, limit: 10 }, activeTab === 'quickfixes');
 
   // Fetch recent downtime incidents (last 30 days)
   const { data: recentDowntime } = useRecentDowntime(serviceId, 30);
@@ -142,6 +143,7 @@ export default function ServicePage() {
           quickfixesError={quickfixesError || undefined}
           onRefresh={handleRefresh}
           onLogPageChange={setLogPage}
+          onFixPageChange={setFixPage}
           isRefreshing={isRefreshing}
         />
       </section>

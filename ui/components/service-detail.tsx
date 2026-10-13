@@ -39,6 +39,7 @@ interface ServiceDetailProps {
   quickfixes?: QuickFixesResponse;
   isLoadingQuickfixes?: boolean;
   quickfixesError?: Error;
+  onFixPageChange?: (page: number) => void;
   onLogPageChange?: (page: number) => void;
   onRefresh?: () => Promise<void>;
   onTabChange?: (tab: TabType) => void;
@@ -57,6 +58,7 @@ export function ServiceDetail({
   quickfixesError,
   onRefresh,
   onLogPageChange,
+  onFixPageChange,
   onTabChange,
   isRefreshing = false,
 }: ServiceDetailProps) {
@@ -122,6 +124,7 @@ export function ServiceDetail({
       ) : tab === 'quickfixes' ? (
         <Quickfixes
           quickfixes={quickfixes}
+          onPageChange={onFixPageChange}
           isLoading={isLoadingQuickfixes}
           error={quickfixesError}
         />
