@@ -145,11 +145,11 @@ func (app *Application) Start() error {
 	return nil
 }
 
-func (app *Application) messageHandler(key, value string) {
-	productID, err := strconv.ParseUint(key, 10, 32)
+func (app *Application) messageHandler(key, value []byte) error {
+	productID, err := strconv.ParseUint(string(key), 10, 32)
 	if err != nil {
 		log.Printf("Error parsing product ID from key '%s': %v", key, err)
-		return
+		return err
 	}
 
 	var batch struct {
@@ -160,9 +160,9 @@ func (app *Application) messageHandler(key, value string) {
 		} `json:"logs"`
 	}
 
-	if err := json.Unmarshal([]byte(value), &batch); err != nil {
+	if err := json.Unmarshal(value, &batch); err != nil {
 		log.Printf("Error parsing batch JSON: %v", err)
-		return
+		return err
 	}
 
 	logs := make([]internal.Log, 0, len(batch.Logs))
@@ -183,11 +183,10 @@ func (app *Application) messageHandler(key, value string) {
 
 	if err := app.logRepo.AddLogsBatch(logs); err != nil {
 		log.Printf("Error saving batch to database: %v", err)
-		return
+		return err
 	}
 
-	log.Printf("Successfully processed batch: %d/%d logs saved for product %d",
-		len(logs), len(batch.Logs), productID)
+	return nil
 }
 
 func (app *Application) Shutdown() {
@@ -241,8 +240,11 @@ func main() {
 		}
 	}()
 
-	sig := <-sigCh
-	log.Printf("Received signal: %v", sig)
+	select {
+	case sig := <-sigCh:
+		log.Printf("Received signal: %v", sig)
+	case <-app.ctx.Done():
+	}
 
 	app.Shutdown()
 	app.Wait()

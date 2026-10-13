@@ -79,14 +79,14 @@ func (c *Consumer) initializeReader() error {
 		MaxBytes:        c.config.MaxBytes,
 		MaxWait:         c.config.MaxWait,
 		ReadLagInterval: c.config.ReadLagInterval,
-		CommitInterval:  c.config.CommitInterval,
+		CommitInterval:  0, // Commit only after persistence; replay is at-least-once.
 		Logger:          kafka.LoggerFunc(log.Printf),
 	})
 
 	return nil
 }
 
-func (c *Consumer) Read(ctx context.Context, handler func(key, value string)) error {
+func (c *Consumer) Read(ctx context.Context, handler func(key, value []byte) error) error {
 	if err := c.initializeReader(); err != nil {
 		return fmt.Errorf("failed to initialize reader: %w", err)
 	}
@@ -119,7 +119,7 @@ func (c *Consumer) Read(ctx context.Context, handler func(key, value string)) er
 		}
 
 		// Read message with timeout
-		msg, err := c.reader.ReadMessage(readCtx)
+		msg, err := c.reader.FetchMessage(readCtx)
 		if err != nil {
 			if readCtx.Err() != nil {
 				// Context was cancelled, exit gracefully
@@ -134,17 +134,13 @@ func (c *Consumer) Read(ctx context.Context, handler func(key, value string)) er
 			continue
 		}
 
-		// Process message synchronously for better performance
-		func() {
-			defer func() {
-				if r := recover(); r != nil {
-					log.Printf("Panic in message handler: %v", r)
-				}
-			}()
-
-			// Call the handler
-			handler(string(msg.Key), string(msg.Value))
-		}()
+		// Never advance offsets past a failed database write.
+		if err := handler(msg.Key, msg.Value); err != nil {
+			return fmt.Errorf("persist message: %w", err)
+		}
+		if err := c.reader.CommitMessages(readCtx, msg); err != nil {
+			return fmt.Errorf("commit message: %w", err)
+		}
 	}
 }
 
