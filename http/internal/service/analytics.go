@@ -1,7 +1,7 @@
 package service
 
 import (
-	"http/internal/database"
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -12,12 +12,12 @@ type AnalyticsService struct {
 }
 
 type UptimeStats struct {
-	ProductID          uint    `json:"product_id"`
-	UptimePercentage   float64 `json:"uptime_percentage"`
-	TotalDowntimeMinutes int   `json:"total_downtime_minutes"`
-	IncidentCount      int     `json:"incident_count"`
-	PeriodStart        string  `json:"period_start"`
-	PeriodEnd          string  `json:"period_end"`
+	ProductID            uint    `json:"product_id"`
+	UptimePercentage     float64 `json:"uptime_percentage"`
+	TotalDowntimeMinutes int     `json:"total_downtime_minutes"`
+	IncidentCount        int     `json:"incident_count"`
+	PeriodStart          string  `json:"period_start"`
+	PeriodEnd            string  `json:"period_end"`
 }
 
 func NewAnalyticsService(db *gorm.DB) (*AnalyticsService, error) {
@@ -58,53 +58,36 @@ func (s *AnalyticsService) GetUptimeStats(productID uint, period, startDate, end
 		periodEnd = now
 	}
 
-	// Get downtime incidents in the period
-	var downtimes []database.Downtime
-	if err := s.db.Where("product_id = ? AND start_time >= ? AND start_time <= ?", 
-		productID, periodStart, periodEnd).Find(&downtimes).Error; err != nil {
+	if !periodEnd.After(periodStart) {
+		return nil, errors.New("end date must be after start date")
+	}
+	// Return one aggregate row instead of allocating every incident in Go.
+	// range_agg merges overlapping intervals so downtime is not counted twice.
+	var totals struct {
+		Minutes       float64
+		IncidentCount int
+	}
+	err := s.db.Raw(`
+        WITH incidents AS (
+            SELECT GREATEST(start_time, ?) AS start_at,
+                   LEAST(COALESCE(end_time, ?), ?) AS end_at
+            FROM downtimes
+            WHERE product_id = ? AND start_time < ?
+              AND (end_time IS NULL OR end_time > ?)
+        ), merged AS (
+            SELECT range_agg(tstzrange(start_at, end_at, '[)')) AS periods
+            FROM incidents WHERE end_at > start_at
+        )
+        SELECT COALESCE((SELECT SUM(EXTRACT(EPOCH FROM (upper(p) - lower(p)))) / 60
+                        FROM merged, unnest(periods) AS p), 0) AS minutes,
+               (SELECT COUNT(*) FROM incidents) AS incident_count`,
+		periodStart, now, periodEnd, productID, periodEnd, periodStart).Scan(&totals).Error
+	if err != nil {
 		return nil, err
 	}
-
-	// Calculate total downtime minutes
-	var totalDowntimeMinutes int
-	incidentCount := len(downtimes)
-
-	for _, downtime := range downtimes {
-		var endTime time.Time
-		if downtime.EndTime != nil {
-			endTime = *downtime.EndTime
-		} else {
-			// If incident is ongoing, use current time
-			endTime = now
-		}
-
-		// Only count downtime within our period
-		startTime := downtime.StartTime
-		if startTime.Before(periodStart) {
-			startTime = periodStart
-		}
-		if endTime.After(periodEnd) {
-			endTime = periodEnd
-		}
-
-		if endTime.After(startTime) {
-			duration := endTime.Sub(startTime)
-			totalDowntimeMinutes += int(duration.Minutes())
-		}
-	}
-
-	// Calculate uptime percentage
-	totalPeriodMinutes := int(periodEnd.Sub(periodStart).Minutes())
-	uptimeMinutes := totalPeriodMinutes - totalDowntimeMinutes
-	uptimePercentage := float64(uptimeMinutes) / float64(totalPeriodMinutes) * 100
-
-	// Ensure uptime percentage is between 0 and 100
-	if uptimePercentage < 0 {
-		uptimePercentage = 0
-	}
-	if uptimePercentage > 100 {
-		uptimePercentage = 100
-	}
+	totalDowntimeMinutes := int(totals.Minutes)
+	incidentCount := totals.IncidentCount
+	uptimePercentage := max(0, min(100, 100*(1-totals.Minutes/periodEnd.Sub(periodStart).Minutes())))
 
 	return &UptimeStats{
 		ProductID:            productID,
