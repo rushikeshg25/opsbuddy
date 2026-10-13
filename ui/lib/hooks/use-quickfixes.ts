@@ -8,10 +8,10 @@ export const quickFixesKeys = {
   list: (query: QuickFixesQuery) => [...quickFixesKeys.lists(), query] as const,
 };
 
-export const useQuickFixes = (query: QuickFixesQuery) => {
+export const useQuickFixes = (query: QuickFixesQuery, enabled = true) => {
   return useQuery({
     queryKey: quickFixesKeys.list(query),
     queryFn: ({ signal }) => apiClient.getQuickFixes(query, signal),
-    enabled: !!query.product_id,
+    enabled: enabled && !!query.product_id,
   });
 };

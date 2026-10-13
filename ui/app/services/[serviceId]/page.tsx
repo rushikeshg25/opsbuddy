@@ -22,6 +22,7 @@ export default function ServicePage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('overview');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const serviceId = parseInt(params.serviceId as string);
 
@@ -48,7 +49,7 @@ export default function ServicePage() {
     data: quickfixesData,
     isLoading: isLoadingQuickfixes,
     error: quickfixesError,
-  } = useQuickFixes({ product_id: serviceId });
+  } = useQuickFixes({ product_id: serviceId }, activeTab === 'quickfixes');
 
   // Fetch recent downtime incidents (last 30 days)
   const { data: recentDowntime } = useRecentDowntime(serviceId, 30);
@@ -124,6 +125,7 @@ export default function ServicePage() {
         </div>
         <ServiceDetail
           service={service}
+          onTabChange={setActiveTab}
           recentLogs={recentLogs}
           recentDowntime={recentDowntime}
           uptimeStats={{

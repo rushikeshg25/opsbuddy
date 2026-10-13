@@ -8,12 +8,13 @@ import {
   AppError,
 } from '@/lib/types/api';
 import { useState, useCallback, useEffect } from 'react';
-import IngestionPanel from './ingestion-panel';
-import LogsPanel from './logs-panel';
+import dynamic from 'next/dynamic';
+const IngestionPanel = dynamic(() => import('./ingestion-panel'));
+const LogsPanel = dynamic(() => import('./logs-panel'));
 import Overview from './overview';
 import { StatusBadge } from './status-badge';
-import StatusPanel from './status-panel';
-import Quickfixes from './quickfixes';
+const StatusPanel = dynamic(() => import('./status-panel'));
+const Quickfixes = dynamic(() => import('./quickfixes'));
 import { Button } from './ui/button';
 import { RefreshCw } from 'lucide-react';
 
@@ -39,6 +40,7 @@ interface ServiceDetailProps {
   isLoadingQuickfixes?: boolean;
   quickfixesError?: Error;
   onRefresh?: () => void;
+  onTabChange?: (tab: TabType) => void;
   isRefreshing?: boolean;
 }
 
@@ -91,6 +93,7 @@ export function ServiceDetail({
   isLoadingQuickfixes,
   quickfixesError,
   onRefresh,
+  onTabChange,
   isRefreshing = false,
 }: ServiceDetailProps) {
   const [tab, setTab] = useState<TabType>('overview');
@@ -98,6 +101,7 @@ export function ServiceDetail({
 
   const tabHandler = (tab: TabType) => {
     setTab(tab);
+    onTabChange?.(tab);
   };
 
   const handleRefresh = useCallback(() => {
@@ -144,7 +148,7 @@ export function ServiceDetail({
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted'
           }`}
-          onClick={() => setTab('overview')}
+          onClick={() => tabHandler('overview')}
         >
           Overview
         </button>
@@ -152,7 +156,7 @@ export function ServiceDetail({
           className={`rounded-md px-3 py-1.5 text-sm ${
             tab === 'status' ? 'bg-primary text-primary-foreground' : 'bg-muted'
           }`}
-          onClick={() => setTab('status')}
+          onClick={() => tabHandler('status')}
         >
           Status
         </button>
@@ -160,7 +164,7 @@ export function ServiceDetail({
           className={`rounded-md px-3 py-1.5 text-sm ${
             tab === 'logs' ? 'bg-primary text-primary-foreground' : 'bg-muted'
           }`}
-          onClick={() => setTab('logs')}
+          onClick={() => tabHandler('logs')}
         >
           Logs
         </button>
@@ -171,7 +175,7 @@ export function ServiceDetail({
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted'
           }`}
-          onClick={() => setTab('Ingestion Integration')}
+          onClick={() => tabHandler('Ingestion Integration')}
         >
           Ingestion SDK
         </button>
@@ -182,7 +186,7 @@ export function ServiceDetail({
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted'
           }`}
-          onClick={() => setTab('quickfixes')}
+          onClick={() => tabHandler('quickfixes')}
         >
           Quickfixes
         </button>
