@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { SiteHeader } from '@/components/site-header';
-import { ServicesBrowser } from '@/components/services-browser';
-import { CreateServiceModal } from '@/components/create-service-modal';
-import { useRequireAuth } from '@/lib/hooks/use-auth';
-import { useProducts } from '@/lib/hooks/use-products';
-import { Button } from '@/components/ui/button';
-import { LoadingPage, LoadingSpinner } from '@/components/ui/loading-spinner';
+import { SiteHeader } from "@/components/site-header";
+import { ServicesBrowser } from "@/components/services-browser";
+import { CreateServiceModal } from "@/components/create-service-modal";
+import { useRequireAuth } from "@/lib/hooks/use-auth";
+import { useProducts } from "@/lib/hooks/use-products";
+import { Button } from "@/components/ui/button";
+import { LoadingPage, LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function ServicesPage() {
   const { user, isLoading: authLoading } = useRequireAuth();
@@ -16,7 +16,7 @@ export default function ServicesPage() {
     isFetching,
     error,
     refetch: fetchProducts,
-  } = useProducts();
+  } = useProducts(!authLoading && !!user);
 
   if (authLoading) {
     return <LoadingPage text="Authenticating..." />;
@@ -29,9 +29,7 @@ export default function ServicesPage() {
         <div className="flex flex-wrap justify-between items-end gap-5 mb-8">
           <div>
             <p className="eyebrow mb-3">Workspace / Monitoring</p>
-            <h1 className="page-title">
-              Services
-            </h1>
+            <h1 className="page-title">Services</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               A clear view of the services you depend on.
             </p>
@@ -43,7 +41,7 @@ export default function ServicesPage() {
               onClick={() => fetchProducts()}
               disabled={isFetching}
             >
-              {isFetching ? 'Refreshing…' : 'Refresh'}
+              {isFetching ? "Refreshing…" : "Refresh"}
             </Button>
           </div>
         </div>
@@ -53,7 +51,7 @@ export default function ServicesPage() {
             <p className="text-sm text-red-600 dark:text-red-400">
               {error instanceof Error
                 ? error.message
-                : 'Failed to load services'}
+                : "Failed to load services"}
             </p>
           </div>
         )}

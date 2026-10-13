@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/auth-store';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/lib/store/auth-store";
 
 export const useAuth = () => {
   const {
@@ -43,7 +43,7 @@ export const useRequireAuth = () => {
 
   useEffect(() => {
     if (isInitialized && !isLoading && !isAuthenticated) {
-      router.push('/sign-in');
+      router.push("/sign-in");
     }
   }, [isAuthenticated, isLoading, isInitialized, router]);
 
@@ -61,7 +61,7 @@ export const useRequireGuest = () => {
 
   useEffect(() => {
     if (isInitialized && !isLoading && isAuthenticated) {
-      router.push('/services');
+      router.push("/services");
     }
   }, [isAuthenticated, isLoading, isInitialized, router]);
 

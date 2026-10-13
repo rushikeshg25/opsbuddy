@@ -1,10 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
-import { QuickFixesQuery } from '../types/api';
-import apiClient from '../api-client';
+import { useQuery } from "@tanstack/react-query";
+import { QuickFixesQuery } from "../types/api";
+import apiClient from "../api-client";
 
 export const quickFixesKeys = {
-  all: ['quickfixes'] as const,
-  lists: () => [...quickFixesKeys.all, 'list'] as const,
+  all: ["quickfixes"] as const,
+  lists: () => [...quickFixesKeys.all, "list"] as const,
   list: (query: QuickFixesQuery) => [...quickFixesKeys.lists(), query] as const,
 };
 

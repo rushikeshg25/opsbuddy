@@ -64,6 +64,7 @@ func (q *QuickFixesController) getQuickFixes(c *gin.Context) {
 		page = 1
 	}
 
+	limit, page = service.NormalizePagination(limit, page)
 	quickfixes, total, err := q.quickFixesService.GetQuickFixes(uint(productID), limit, page, level, startDate, endDate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

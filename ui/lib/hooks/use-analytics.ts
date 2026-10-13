@@ -1,17 +1,17 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
 import {
   AnalyticsQuery,
   UptimeStats,
   HealthCheckResult,
-} from '@/lib/types/api';
+} from "@/lib/types/api";
 
 export const analyticsKeys = {
-  all: ['analytics'] as const,
-  uptime: () => [...analyticsKeys.all, 'uptime'] as const,
+  all: ["analytics"] as const,
+  uptime: () => [...analyticsKeys.all, "uptime"] as const,
   uptimeStats: (query: AnalyticsQuery) =>
     [...analyticsKeys.uptime(), query] as const,
-  healthChecks: () => [...analyticsKeys.all, 'health-checks'] as const,
+  healthChecks: () => [...analyticsKeys.all, "health-checks"] as const,
 };
 
 export const useUptimeStats = (query: AnalyticsQuery) => {
@@ -34,10 +34,13 @@ export const useUptimeStats24h = (productId: number) => {
   return useQuery({
     queryKey: analyticsKeys.uptimeStats({
       product_id: productId,
-      period: '24h',
+      period: "24h",
     }),
     queryFn: ({ signal }) =>
-      apiClient.getUptimeStats({ product_id: productId, period: '24h' }, signal),
+      apiClient.getUptimeStats(
+        { product_id: productId, period: "24h" },
+        signal,
+      ),
     enabled: !!productId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
@@ -49,10 +52,10 @@ export const useUptimeStats7d = (productId: number) => {
   return useQuery({
     queryKey: analyticsKeys.uptimeStats({
       product_id: productId,
-      period: '7d',
+      period: "7d",
     }),
     queryFn: ({ signal }) =>
-      apiClient.getUptimeStats({ product_id: productId, period: '7d' }, signal),
+      apiClient.getUptimeStats({ product_id: productId, period: "7d" }, signal),
     enabled: !!productId,
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
@@ -64,10 +67,13 @@ export const useUptimeStats30d = (productId: number) => {
   return useQuery({
     queryKey: analyticsKeys.uptimeStats({
       product_id: productId,
-      period: '30d',
+      period: "30d",
     }),
     queryFn: ({ signal }) =>
-      apiClient.getUptimeStats({ product_id: productId, period: '30d' }, signal),
+      apiClient.getUptimeStats(
+        { product_id: productId, period: "30d" },
+        signal,
+      ),
     enabled: !!productId,
     staleTime: 15 * 60 * 1000, // 15 minutes
     gcTime: 60 * 60 * 1000, // 1 hour
@@ -79,10 +85,13 @@ export const useUptimeStats90d = (productId: number) => {
   return useQuery({
     queryKey: analyticsKeys.uptimeStats({
       product_id: productId,
-      period: '90d',
+      period: "90d",
     }),
     queryFn: ({ signal }) =>
-      apiClient.getUptimeStats({ product_id: productId, period: '90d' }, signal),
+      apiClient.getUptimeStats(
+        { product_id: productId, period: "90d" },
+        signal,
+      ),
     enabled: !!productId,
     staleTime: 30 * 60 * 1000, // 30 minutes
     gcTime: 2 * 60 * 60 * 1000, // 2 hours

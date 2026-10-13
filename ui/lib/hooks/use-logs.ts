@@ -1,16 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
-import { LogsQuery, LogsResponse } from '@/lib/types/api';
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+import { LogsQuery, LogsResponse } from "@/lib/types/api";
 
 export const logKeys = {
-  all: ['logs'] as const,
-  lists: () => [...logKeys.all, 'list'] as const,
+  all: ["logs"] as const,
+  lists: () => [...logKeys.all, "list"] as const,
   list: (query: LogsQuery) => [...logKeys.lists(), query] as const,
 };
 
 export const useLogsRealtime = (
   query: LogsQuery,
-  refreshInterval: number = 30000
+  refreshInterval: number = 30000,
 ) => {
   return useQuery({
     queryKey: logKeys.list(query),

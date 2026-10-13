@@ -1,5 +1,6 @@
-const AUTH_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-export const SESSION_COOKIE = 'opsbuddy_session';
+const AUTH_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+export const SESSION_COOKIE = "opsbuddy_session";
 
 export interface User {
   id: string;
@@ -12,7 +13,7 @@ export const authAPI = {
   checkAuth: async (): Promise<User | null> => {
     try {
       const response = await fetch(`${AUTH_BASE_URL}/api/me`, {
-        credentials: 'include',
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -21,7 +22,7 @@ export const authAPI = {
       }
       return null;
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.error("Auth check failed:", error);
       return null;
     }
   },
@@ -29,13 +30,13 @@ export const authAPI = {
   logout: async (): Promise<boolean> => {
     try {
       const response = await fetch(`${AUTH_BASE_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
+        method: "POST",
+        credentials: "include",
       });
 
       return response.ok;
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
       return false;
     }
   },
@@ -45,14 +46,14 @@ export const authAPI = {
   },
 };
 
-import { useAuthStore } from './store/auth-store';
+import { useAuthStore } from "./store/auth-store";
 
 export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   const response = await fetch(`${AUTH_BASE_URL}/api${endpoint}`, {
     ...options,
-    credentials: 'include', // Always include cookies
+    credentials: "include", // Always include cookies
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...options.headers,
     },
   });
@@ -60,8 +61,8 @@ export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   if (!response.ok) {
     if (response.status === 401) {
       useAuthStore.getState().reset();
-      window.location.href = '/sign-in';
-      throw new Error('Unauthorized');
+      window.location.href = "/sign-in";
+      throw new Error("Unauthorized");
     }
     throw new Error(`API call failed: ${response.statusText}`);
   }

@@ -1,0 +1,107 @@
+OpsBuddy verification — 2026-10-13
+Baseline: 9f00da9188756dae1e27f8066d6f1abf8d30efdb
+Machine: Apple M1 / macOS; Bun 1.1.24; Next.js 15.4.1
+PostgreSQL integration: disposable PostgreSQL 17, OPSBUDDY_TEST_DSN set.
+
+?   	http/cmd/api	[no test files]
+?   	http/cmd/seed	[no test files]
+?   	http/internal/controller	[no test files]
+?   	http/internal/database	[no test files]
+?   	http/internal/middleware	[no test files]
+?   	http/internal/server	[no test files]
+ok  	http/internal/service	0.586s
+?   	ping-service	[no test files]
+ok  	ping-service/internal	0.265s
+?   	log-ingestion-service	[no test files]
+?   	log-ingestion-service/internal	[no test files]
+?   	log-ingestion-service/proto	[no test files]
+?   	log-consumer-service	[no test files]
+?   	log-consumer-service/internal	[no test files]
+?   	notification-service	[no test files]
+?   	notification-service/internal	[no test files]
+?   	github.com/opsbuddy/sdk-go/proto	[no test files]
+?   	ping-service	[no test files]
+ok  	ping-service/internal	1.627s
+bun test v1.1.24 (85a32991)
+
+index.test.ts:
+(pass) default interval flushes in bounded batches and serializes concurrent flushes [2.87ms]
+(pass) failure retains queued logs without generating recursive diagnostics [0.44ms]
+(pass) invalid batch configuration is rejected before creating resources
+(pass) queue saturation drops new records and circular values do not crash capture [1.17ms]
+
+ 4 pass
+ 0 fail
+ 6 expect() calls
+Ran 4 tests across 1 files. [144.00ms]
+$ tsc --noEmit
+$ tsup
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.0
+CLI Using tsup config: /Users/rushikeshghotekar/.t3/projects/opsbuddy/source/sdk/node/tsup.config.ts
+CLI Target: es2016
+CLI Cleaning output folder
+CJS Build start
+ESM Build start
+CJS dist/index.js     14.82 KB
+CJS dist/index.js.map 25.85 KB
+CJS ⚡️ Build success in 12ms
+ESM dist/index.mjs     13.47 KB
+ESM dist/index.mjs.map 25.77 KB
+ESM ⚡️ Build success in 12ms
+DTS Build start
+DTS ⚡️ Build success in 541ms
+DTS dist/index.d.ts  4.41 KB
+DTS dist/index.d.mts 4.41 KB
+bun test v1.1.24 (85a32991)
+
+tests/log-format.test.ts:
+(pass) handles SDK messages and structured logs [1.89ms]
+(pass) JSON primitives and non-string fields remain renderable
+
+ 2 pass
+ 0 fail
+Ran 2 tests across 1 files. [11.00ms]
+
+Final UI build after lazy dialog split:
+$ next build
+   ▲ Next.js 15.4.1
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 0ms
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/7) ...
+   Generating static pages (1/7) 
+   Generating static pages (3/7) 
+   Generating static pages (5/7) 
+ ✓ Generating static pages (7/7)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    3.35 kB         118 kB
+├ ○ /_not-found                            989 B         101 kB
+├ ○ /services                             3.1 kB         132 kB
+├ ƒ /services/[serviceId]                3.62 kB         133 kB
+└ ○ /sign-in                             4.62 kB         119 kB
++ First Load JS shared by all            99.8 kB
+  ├ chunks/4bd1b696-cf72ae8a39fa05aa.js  54.1 kB
+  ├ chunks/964-eda38e26c0391a47.js       43.5 kB
+  └ other shared chunks (total)           2.1 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+Microbenchmark (10,000 registered products, go test -benchmem):
+BenchmarkRegister10000-8: 37.51 ns/op, 64 B/op, 1 alloc/op
+BenchmarkLegacyMembership10000-8: 7296 ns/op, 0 B/op, 0 alloc/op
+
+Baseline first-load JS: / 115 kB; /services 149 kB; /services/[serviceId] 142 kB; /sign-in 116 kB.
+Production browser smoke: lazy dialog opened, focused name, closed via Escape, restored Add Service focus.
+UI fixtures, not real OAuth/backend integrations, were used for browser verification.
+Index SQL applied twice successfully to disposable ordinary PostgreSQL tables.
+Docker unavailable: TimescaleDB/Kafka/Redis end-to-end testing remains outstanding.

@@ -33,3 +33,21 @@ func BenchmarkRegister10000(b *testing.B) {
 		h.Register(&PingItem{ProductID: 9999})
 	}
 }
+
+// Baseline: the original membership method scanned the locked heap.
+func BenchmarkLegacyMembership10000(b *testing.B) {
+	h := NewPingHeap()
+	for i := uint(0); i < 10000; i++ {
+		h.Register(&PingItem{ProductID: i})
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		h.mutex.RLock()
+		for _, item := range h.items {
+			if item.ProductID == 9999 {
+				break
+			}
+		}
+		h.mutex.RUnlock()
+	}
+}

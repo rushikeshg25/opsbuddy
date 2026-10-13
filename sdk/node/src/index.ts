@@ -1,13 +1,13 @@
 // OpsBuddy Node.js SDK
-export * from './proto/ingestion';
-import { inspect } from 'node:util';
-import { credentials, type ChannelCredentials } from '@grpc/grpc-js';
+export * from "./proto/ingestion";
+import { inspect } from "node:util";
+import { Metadata, credentials, type ChannelCredentials } from "@grpc/grpc-js";
 import {
   IngestionServiceClient,
   type IngestEventRequest,
   type IngestEventResponse,
   type LogEntry,
-} from './proto/ingestion';
+} from "./proto/ingestion";
 
 export interface OpsBuddyConfig {
   serviceId: string;
@@ -39,7 +39,7 @@ export class OpsBuddySDK {
 
   constructor(config: OpsBuddyConfig) {
     this.config = {
-      grpcEndpoint: 'localhost:50051',
+      grpcEndpoint: "localhost:50051",
       batchSize: 100,
       flushInterval: 5000,
       maxQueueSize: 10000,
@@ -47,7 +47,12 @@ export class OpsBuddySDK {
       ...config,
     };
 
-    for (const key of ['batchSize', 'flushInterval', 'maxQueueSize', 'requestTimeout'] as const) {
+    for (const key of [
+      "batchSize",
+      "flushInterval",
+      "maxQueueSize",
+      "requestTimeout",
+    ] as const) {
       if (!Number.isSafeInteger(this.config[key]) || this.config[key] <= 0) {
         throw new RangeError(`${key} must be a positive integer`);
       }
@@ -58,7 +63,7 @@ export class OpsBuddySDK {
 
   private setupGRPCClient() {
     const creds: ChannelCredentials = this.config.grpcEndpoint.includes(
-      'localhost'
+      "localhost",
     )
       ? credentials.createInsecure()
       : credentials.createSsl();
@@ -87,27 +92,27 @@ export class OpsBuddySDK {
     };
 
     console.log = (...args: any[]) => {
-      this.capture('INFO', args);
+      this.capture("INFO", args);
       this.originalConsole.log(...args);
     };
 
     console.error = (...args: any[]) => {
-      this.capture('ERROR', args);
+      this.capture("ERROR", args);
       this.originalConsole.error(...args);
     };
 
     console.warn = (...args: any[]) => {
-      this.capture('WARN', args);
+      this.capture("WARN", args);
       this.originalConsole.warn(...args);
     };
 
     console.info = (...args: any[]) => {
-      this.capture('INFO', args);
+      this.capture("INFO", args);
       this.originalConsole.info(...args);
     };
 
     console.debug = (...args: any[]) => {
-      this.capture('DEBUG', args);
+      this.capture("DEBUG", args);
       this.originalConsole.debug(...args);
     };
 
@@ -134,16 +139,18 @@ export class OpsBuddySDK {
     }
     const message = args
       .map((arg) =>
-        typeof arg === 'object' ? inspect(arg, { depth: 4, maxArrayLength: 50 }) : String(arg)
+        typeof arg === "object"
+          ? inspect(arg, { depth: 4, maxArrayLength: 50 })
+          : String(arg),
       )
-      .join(' ');
+      .join(" ");
 
     const logEntry: CapturedLog = {
       timestamp: new Date().toISOString(),
       level,
       message,
       metadata: {
-        source: 'console',
+        source: "console",
         timestamp_ms: Date.now(),
       },
     };
@@ -156,7 +163,7 @@ export class OpsBuddySDK {
   }
 
   async ingestLogs(logs: CapturedLog[]): Promise<IngestEventResponse> {
-    if (this.closed) throw new Error('OpsBuddy SDK is closed');
+    if (this.closed) throw new Error("OpsBuddy SDK is closed");
     const logEntries: LogEntry[] = logs.map((log) => ({
       timestamp: log.timestamp,
       message: `[${log.level}] ${log.message}`,
@@ -169,22 +176,27 @@ export class OpsBuddySDK {
     };
 
     return new Promise<IngestEventResponse>((resolve, reject) => {
-      this.client.ingestLogBatch(request, { deadline: Date.now() + this.config.requestTimeout }, (error, response) => {
-        if (error) {
-          reject(error);
-        } else if (response) {
-          resolve(response);
-        } else {
-          reject(new Error('No response received'));
-        }
-      });
+      this.client.ingestLogBatch(
+        request,
+        new Metadata(),
+        { deadline: Date.now() + this.config.requestTimeout },
+        (error, response) => {
+          if (error) {
+            reject(error);
+          } else if (response) {
+            resolve(response);
+          } else {
+            reject(new Error("No response received"));
+          }
+        },
+      );
     });
   }
 
   async ingestLog(
     message: string,
-    level: string = 'INFO',
-    timestamp?: string
+    level: string = "INFO",
+    timestamp?: string,
   ): Promise<IngestEventResponse> {
     const log: CapturedLog = {
       message,
@@ -199,7 +211,9 @@ export class OpsBuddySDK {
   flush(): Promise<void> {
     if (this.inFlight) return this.inFlight;
     if (!this.capturedLogs.length) return Promise.resolve();
-    this.inFlight = this.drain().finally(() => { this.inFlight = undefined; });
+    this.inFlight = this.drain().finally(() => {
+      this.inFlight = undefined;
+    });
     return this.inFlight;
   }
 
@@ -216,7 +230,9 @@ export class OpsBuddySDK {
     }
   }
 
-  getDroppedLogCount(): number { return this.droppedLogs; }
+  getDroppedLogCount(): number {
+    return this.droppedLogs;
+  }
 
   getCapturedLogs(): CapturedLog[] {
     return [...this.capturedLogs];
@@ -234,7 +250,7 @@ export class OpsBuddySDK {
       try {
         await this.flush();
       } catch (error) {
-        console.error('Failed to flush remaining logs during close:', error);
+        console.error("Failed to flush remaining logs during close:", error);
       }
     }
 

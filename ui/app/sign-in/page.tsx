@@ -41,10 +41,17 @@ function SignInContent() {
   return (
     <main>
       <SiteHeader />
-      <section id="main-content" tabIndex={-1} className="mx-auto max-w-md px-4 py-20">
+      <section
+        id="main-content"
+        tabIndex={-1}
+        className="mx-auto max-w-md px-4 py-20"
+      >
         <p className="eyebrow mb-4 text-center">Your monitoring workspace</p>
         <h1 className="page-title mb-3 text-center">Welcome back.</h1>
-        <p className="mb-8 text-center text-sm leading-6 text-muted-foreground">Sign in to check your services, investigate incidents, and get back to building.</p>
+        <p className="mb-8 text-center text-sm leading-6 text-muted-foreground">
+          Sign in to check your services, investigate incidents, and get back to
+          building.
+        </p>
         <Card className="shadow-none">
           <CardHeader>
             <CardTitle className="text-pretty text-center">
@@ -53,7 +60,10 @@ function SignInContent() {
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-3">
             {error && (
-              <div role="alert" className="w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3 mb-3">
+              <div
+                role="alert"
+                className="w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3 mb-3"
+              >
                 <p className="text-sm text-red-600 dark:text-red-400 text-center">
                   {error}
                 </p>

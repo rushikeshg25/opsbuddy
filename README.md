@@ -125,3 +125,20 @@ protoc --plugin=protoc-gen-ts=./node_modules/.bin/protoc-gen-ts --js_out=import_
 ## V1 Architecture
 
 <img width="1188" height="591" alt="image" src="https://github.com/user-attachments/assets/66fb4597-e8b2-4162-af7e-3900def2a591" />
+
+## Performance and interface update
+
+The `perf/optimized-ui` branch contains ten performance commits followed by ten UI commits.
+Open [the interactive report](docs/optimization-explainer.html) locally for measured results, the commit sequence, and validation limits.
+
+Install dependencies with `bun install` in `ui` and `sdk/node`. Run `scripts/check.sh` from the repository root to check the Go modules, SDK, and UI. PostgreSQL integration tests run when `OPSBUDDY_TEST_DSN` points to a disposable PostgreSQL 14+ database; otherwise those tests skip.
+
+Apply `migrations/001_read_path_indexes.sql` after the schema exists. Schedule this migration off-peak because TimescaleDB index creation can block writes. Run representative load tests before deployment; the local measurements are not production throughput guarantees.
+
+For a UI-only preview without infrastructure:
+
+1. Run `python3 scripts/preview-api.py` from the repository root. This serves synthetic data on port 8080 and stores nothing permanently.
+2. Run `bun run dev --port 3100` in `ui` and open `http://localhost:3100`.
+3. Stop the fixture API before starting the real API. Do not expose the fixture server publicly.
+
+Set `NEXT_PUBLIC_API_URL` to your real API origin for other environments. Kafka delivery remains at least once; replay can duplicate a persisted batch. The SDK buffers up to 10,000 captured records by default and counts records dropped when the queue is full.

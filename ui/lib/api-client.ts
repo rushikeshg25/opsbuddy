@@ -13,23 +13,23 @@ import {
   HealthCheckResult,
   QuickFixesQuery,
   QuickFixesResponse,
-} from '@/lib/types/api';
+} from "@/lib/types/api";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 class ApiClient {
   constructor(private baseURL: string = API_BASE_URL) {}
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
 
     try {
       const response = await fetch(url, {
-        headers: { 'Content-Type': 'application/json', ...options.headers },
-        credentials: 'include',
+        headers: { "Content-Type": "application/json", ...options.headers },
+        credentials: "include",
         ...options,
       });
 
@@ -45,12 +45,12 @@ class ApiClient {
       return response.json();
     } catch (error) {
       if (options.signal?.aborted) throw error;
-      if (error && typeof error === 'object' && 'status' in error) {
+      if (error && typeof error === "object" && "status" in error) {
         throw error;
       }
       throw {
         status: 0,
-        message: 'Network error occurred',
+        message: "Network error occurred",
         details: error,
       } as ApiError;
     }
@@ -69,21 +69,23 @@ class ApiClient {
   // Products API
   async getProducts(signal?: AbortSignal): Promise<Product[]> {
     const response = await this.request<ApiResponse<Product[]>>(
-      '/api/products', { signal }
+      "/api/products",
+      { signal },
     );
     return response.data ?? [];
   }
 
   async getProduct(id: number, signal?: AbortSignal): Promise<Product> {
     const response = await this.request<ApiResponse<Product>>(
-      `/api/products/${id}`, { signal }
+      `/api/products/${id}`,
+      { signal },
     );
     return response.data!;
   }
 
   async createProduct(data: CreateProductRequest): Promise<Product> {
-    const response = await this.request<ApiResponse<Product>>('/api/products', {
-      method: 'POST',
+    const response = await this.request<ApiResponse<Product>>("/api/products", {
+      method: "POST",
       body: JSON.stringify(data),
     });
     return response.data!;
@@ -91,53 +93,66 @@ class ApiClient {
 
   async updateProduct(
     id: number,
-    data: UpdateProductRequest
+    data: UpdateProductRequest,
   ): Promise<Product> {
     const response = await this.request<ApiResponse<Product>>(
       `/api/products/${id}`,
       {
-        method: 'PUT',
+        method: "PUT",
         body: JSON.stringify(data),
-      }
+      },
     );
     return response.data!;
   }
 
   async deleteProduct(id: number): Promise<void> {
-    await this.request(`/api/products/${id}`, { method: 'DELETE' });
+    await this.request(`/api/products/${id}`, { method: "DELETE" });
   }
 
   // Logs API
   async getLogs(query: LogsQuery, signal?: AbortSignal): Promise<LogsResponse> {
     const params = this.buildParams(query);
     const response = await this.request<ApiResponse<LogsResponse>>(
-      `/api/logs?${params}`, { signal }
+      `/api/logs?${params}`,
+      { signal },
     );
     return response.data ?? { logs: [], total: 0, page: 1, limit: 50 };
   }
 
-  async getQuickFixes(query: QuickFixesQuery, signal?: AbortSignal): Promise<QuickFixesResponse> {
+  async getQuickFixes(
+    query: QuickFixesQuery,
+    signal?: AbortSignal,
+  ): Promise<QuickFixesResponse> {
     const params = this.buildParams(query);
     const response = await this.request<ApiResponse<QuickFixesResponse>>(
-      `/api/quick-fixes?${params}`, { signal }
+      `/api/quick-fixes?${params}`,
+      { signal },
     );
     return response.data ?? { quickfixes: [], total: 0, page: 1, limit: 9 };
   }
 
   // Downtime API
-  async getDowntime(query: DowntimeQuery, signal?: AbortSignal): Promise<Downtime[]> {
+  async getDowntime(
+    query: DowntimeQuery,
+    signal?: AbortSignal,
+  ): Promise<Downtime[]> {
     const params = this.buildParams(query);
     const response = await this.request<ApiResponse<Downtime[]>>(
-      `/api/downtime?${params}`, { signal }
+      `/api/downtime?${params}`,
+      { signal },
     );
     return response.data ?? [];
   }
 
   // Analytics API
-  async getUptimeStats(query: AnalyticsQuery, signal?: AbortSignal): Promise<UptimeStats> {
+  async getUptimeStats(
+    query: AnalyticsQuery,
+    signal?: AbortSignal,
+  ): Promise<UptimeStats> {
     const params = this.buildParams(query);
     const response = await this.request<ApiResponse<UptimeStats>>(
-      `/api/analytics/uptime?${params}`, { signal }
+      `/api/analytics/uptime?${params}`,
+      { signal },
     );
     return response.data!;
   }
@@ -147,8 +162,8 @@ class ApiClient {
     const response = await this.request<ApiResponse<HealthCheckResult>>(
       `/api/products/${productId}/health-check`,
       {
-        method: 'POST',
-      }
+        method: "POST",
+      },
     );
     return response.data!;
   }
