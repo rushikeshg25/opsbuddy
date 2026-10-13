@@ -3,6 +3,10 @@
 
 **OpsBuddy** is a comprehensive microservices monitoring platform that provides real-time health monitoring, intelligent log analysis, and automated incident response with Quickfixes. 
 
+## Run locally
+
+Follow [the agent-ready local setup guide](docs/local-development.md) to start the real stack, sign in without Google credentials, verify log ingestion, and stop every service. Only real AI analysis needs an external API key.
+
 ## Architecture Overview
 
 OpsBuddy consists of several interconnected microservices:
