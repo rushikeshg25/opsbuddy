@@ -116,7 +116,7 @@ export default function ServicePage() {
   return (
     <main>
       <SiteHeader />
-      <section id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-8">
+      <section id="main-content" tabIndex={-1} className="page-shell">
         <div className="mb-4 text-sm text-muted-foreground">
           <Link href="/services" className="hover:text-foreground">
             Services
