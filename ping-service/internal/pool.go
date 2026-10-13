@@ -38,7 +38,6 @@ func (wp *WorkerPool) Start() {
 func (wp *WorkerPool) Stop() {
 	log.Println("Stopping worker pool...")
 	wp.cancel()
-	close(wp.jobChan)
 	wp.wg.Wait()
 	log.Println("Worker pool stopped")
 }
@@ -64,7 +63,6 @@ func (wp *WorkerPool) worker(id int) {
 				return
 			}
 
-			log.Printf("Worker %d: processing ping for product %d", id, job.ProductID)
 			wp.pingService.processPing(job)
 
 		case <-wp.ctx.Done():

@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -50,7 +51,8 @@ func NewPingService(db Service, workerCount int) *PingService {
 		db:   db,
 		heap: NewPingHeap(),
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout:   10 * time.Second,
+			Transport: newHealthTransport(workerCount),
 		},
 		ctx:           ctx,
 		cancel:        cancel,
@@ -83,6 +85,7 @@ func (ps *PingService) Stop() {
 	log.Println("Stopping ping service...")
 	ps.cancel()
 	ps.workerPool.Stop()
+	ps.httpClient.CloseIdleConnections()
 
 	if err := ps.kafkaProducer.Close(); err != nil {
 		log.Printf("Error closing Kafka producer: %v", err)
@@ -168,12 +171,13 @@ func (ps *PingService) performHealthCheck(healthAPI string) bool {
 		return false
 	}
 	defer resp.Body.Close()
+	// Drain small responses so the transport can reuse TCP/TLS connections.
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64*1024))
 
 	return resp.StatusCode == http.StatusOK
 }
 
 func (ps *PingService) handleSuccessfulPing(item *PingItem) {
-	log.Printf("Product %d health check successful", item.ProductID)
 
 	// If service was down, mark it as up
 	if item.IsDown {
@@ -434,4 +438,14 @@ func (ps *PingService) isProductInHeap(productID uint) bool {
 		}
 	}
 	return false
+}
+
+func newHealthTransport(workers int) *http.Transport {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.MaxIdleConns = max(workers*2, 100)
+	t.MaxIdleConnsPerHost = max(workers, 2)
+	t.MaxConnsPerHost = max(workers, 2)
+	t.IdleConnTimeout = 90 * time.Second
+	t.ResponseHeaderTimeout = 5 * time.Second
+	return t
 }
