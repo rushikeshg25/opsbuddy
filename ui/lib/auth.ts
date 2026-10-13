@@ -1,3 +1,4 @@
+const AUTH_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 export const SESSION_COOKIE = 'opsbuddy_session';
 
 export interface User {
@@ -10,7 +11,7 @@ export interface User {
 export const authAPI = {
   checkAuth: async (): Promise<User | null> => {
     try {
-      const response = await fetch('http://localhost:8080/api/me', {
+      const response = await fetch(`${AUTH_BASE_URL}/api/me`, {
         credentials: 'include',
       });
 
@@ -27,7 +28,7 @@ export const authAPI = {
 
   logout: async (): Promise<boolean> => {
     try {
-      const response = await fetch('http://localhost:8080/auth/logout', {
+      const response = await fetch(`${AUTH_BASE_URL}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
@@ -40,14 +41,14 @@ export const authAPI = {
   },
 
   loginWithGoogle: () => {
-    window.location.href = 'http://localhost:8080/auth/google';
+    window.location.href = `${AUTH_BASE_URL}/auth/google`;
   },
 };
 
 import { useAuthStore } from './store/auth-store';
 
 export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
-  const response = await fetch(`http://localhost:8080/api${endpoint}`, {
+  const response = await fetch(`${AUTH_BASE_URL}/api${endpoint}`, {
     ...options,
     credentials: 'include', // Always include cookies
     headers: {

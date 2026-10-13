@@ -22,7 +22,7 @@ function SignInContent() {
 
   const handleGoogleLogin = () => {
     setIsLoading(true);
-    window.location.href = "http://localhost:8080/auth/google";
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/auth/google`;
   };
 
   if (isCheckingAuth) {
@@ -41,16 +41,19 @@ function SignInContent() {
   return (
     <main>
       <SiteHeader />
-      <section id="main-content" tabIndex={-1} className="mx-auto max-w-md px-4 py-16">
-        <Card className="animate-in fade-in-0 duration-300">
+      <section id="main-content" tabIndex={-1} className="mx-auto max-w-md px-4 py-20">
+        <p className="eyebrow mb-4 text-center">Your monitoring workspace</p>
+        <h1 className="page-title mb-3 text-center">Welcome back.</h1>
+        <p className="mb-8 text-center text-sm leading-6 text-muted-foreground">Sign in to check your services, investigate incidents, and get back to building.</p>
+        <Card className="shadow-none">
           <CardHeader>
             <CardTitle className="text-pretty text-center">
-              Sign in to Ops Buddy
+              Sign in to OpsBuddy
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-3">
             {error && (
-              <div className="w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3 mb-3">
+              <div role="alert" className="w-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3 mb-3">
                 <p className="text-sm text-red-600 dark:text-red-400 text-center">
                   {error}
                 </p>
@@ -63,7 +66,7 @@ function SignInContent() {
               className="w-full flex justify-center items-center space-x-2"
             >
               {isLoading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <span role="status">Connecting to Google…</span>
               ) : (
                 <>
                   <svg

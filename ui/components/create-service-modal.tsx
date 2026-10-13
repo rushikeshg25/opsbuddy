@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogDescription,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
@@ -29,9 +30,9 @@ export function CreateServiceModal() {
 
     try {
       await createProduct.mutateAsync({
-        name,
-        description,
-        health_api: healthApi,
+        name: name.trim(),
+        description: description.trim(),
+        health_api: healthApi.trim(),
       });
 
       setName('');
@@ -53,7 +54,7 @@ export function CreateServiceModal() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(next) => { if (!createProduct.isPending) { if (next) setOpen(true); else handleClose(); } }}>
       <DialogTrigger asChild>
         <Button className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
@@ -62,11 +63,12 @@ export function CreateServiceModal() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Service</DialogTitle>
+          <DialogTitle>Add a service</DialogTitle>
+          <DialogDescription>Connect a health endpoint to start tracking uptime.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {createProduct.error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
+            <div role="alert" className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
               <p className="text-sm text-red-600 dark:text-red-400">
                 {createProduct.error instanceof Error
                   ? createProduct.error.message
@@ -82,6 +84,7 @@ export function CreateServiceModal() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="My API Service"
+              maxLength={255}
               required
             />
           </div>
@@ -92,8 +95,9 @@ export function CreateServiceModal() {
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of your service (Will be used as context to LLM)"
+              placeholder="What does this service do?"
               rows={3}
+              maxLength={2000}
             />
           </div>
 
@@ -102,12 +106,16 @@ export function CreateServiceModal() {
             <Input
               id="healthApi"
               type="url"
+              required
+              pattern="https?://.*"
+              aria-describedby="endpoint-help"
               value={healthApi}
               onChange={(e) => setHealthApi(e.target.value)}
               placeholder="https://api.example.com/health"
             />
           </div>
 
+          <p id="endpoint-help" className="text-xs leading-5 text-muted-foreground">Use an HTTP or HTTPS endpoint that returns 200 when the service is healthy.</p>
           <div className="flex justify-end gap-2 pt-4">
             <Button
               type="button"
