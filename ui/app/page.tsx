@@ -8,7 +8,7 @@ export default function HomePage() {
   return (
     <main>
       <SiteHeader />
-      <section className="mx-auto max-w-6xl px-4 pt-16 pb-12">
+      <section id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 pt-16 pb-12">
         <div className="mx-auto max-w-3xl text-center animate-in fade-in-0 duration-300">
           <h1 className="text-pretty text-4xl font-semibold tracking-tight sm:text-5xl">
             Uptime monitoring made simple

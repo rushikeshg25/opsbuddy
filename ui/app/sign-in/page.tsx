@@ -41,7 +41,7 @@ function SignInContent() {
   return (
     <main>
       <SiteHeader />
-      <section className="mx-auto max-w-md px-4 py-16">
+      <section id="main-content" tabIndex={-1} className="mx-auto max-w-md px-4 py-16">
         <Card className="animate-in fade-in-0 duration-300">
           <CardHeader>
             <CardTitle className="text-pretty text-center">

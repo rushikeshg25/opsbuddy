@@ -24,7 +24,7 @@ export default function ServicesPage() {
   return (
     <main>
       <SiteHeader />
-      <section className="mx-auto max-w-6xl px-4 py-8">
+      <section id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
