@@ -1,5 +1,6 @@
 // OpsBuddy Node.js SDK
 export * from './proto/ingestion';
+import { inspect } from 'node:util';
 import { credentials, type ChannelCredentials } from '@grpc/grpc-js';
 import {
   IngestionServiceClient,
@@ -14,6 +15,8 @@ export interface OpsBuddyConfig {
   grpcEndpoint?: string;
   batchSize?: number;
   flushInterval?: number;
+  maxQueueSize?: number;
+  requestTimeout?: number;
 }
 
 export interface CapturedLog {
@@ -30,15 +33,25 @@ export class OpsBuddySDK {
   private originalConsole: any = {};
   private flushTimer?: NodeJS.Timeout;
   private isIntercepting = false;
+  private inFlight?: Promise<void>;
+  private closed = false;
+  private droppedLogs = 0;
 
   constructor(config: OpsBuddyConfig) {
     this.config = {
       grpcEndpoint: 'localhost:50051',
       batchSize: 100,
       flushInterval: 5000,
+      maxQueueSize: 10000,
+      requestTimeout: 10000,
       ...config,
     };
 
+    for (const key of ['batchSize', 'flushInterval', 'maxQueueSize', 'requestTimeout'] as const) {
+      if (!Number.isSafeInteger(this.config[key]) || this.config[key] <= 0) {
+        throw new RangeError(`${key} must be a positive integer`);
+      }
+    }
     this.setupGRPCClient();
     this.startBatching();
   }
@@ -59,10 +72,11 @@ export class OpsBuddySDK {
         this.flush();
       }
     }, this.config.flushInterval);
+    this.flushTimer.unref();
   }
 
   startIntercepting() {
-    if (this.isIntercepting) return;
+    if (this.isIntercepting || this.closed) return;
 
     this.originalConsole = {
       log: console.log,
@@ -113,9 +127,14 @@ export class OpsBuddySDK {
   }
 
   private capture(level: string, args: any[]) {
+    if (this.closed) return;
+    if (this.capturedLogs.length >= this.config.maxQueueSize) {
+      this.droppedLogs++;
+      return;
+    }
     const message = args
       .map((arg) =>
-        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+        typeof arg === 'object' ? inspect(arg, { depth: 4, maxArrayLength: 50 }) : String(arg)
       )
       .join(' ');
 
@@ -137,6 +156,7 @@ export class OpsBuddySDK {
   }
 
   async ingestLogs(logs: CapturedLog[]): Promise<IngestEventResponse> {
+    if (this.closed) throw new Error('OpsBuddy SDK is closed');
     const logEntries: LogEntry[] = logs.map((log) => ({
       timestamp: log.timestamp,
       message: `[${log.level}] ${log.message}`,
@@ -149,7 +169,7 @@ export class OpsBuddySDK {
     };
 
     return new Promise<IngestEventResponse>((resolve, reject) => {
-      this.client.ingestLogBatch(request, (error, response) => {
+      this.client.ingestLogBatch(request, { deadline: Date.now() + this.config.requestTimeout }, (error, response) => {
         if (error) {
           reject(error);
         } else if (response) {
@@ -175,22 +195,28 @@ export class OpsBuddySDK {
     return this.ingestLogs([log]);
   }
 
-  private async flush() {
-    if (this.config.flushInterval <= 5000) {
-      console.warn('flushInterval is less than 5000 ms, skipping flush');
-      return;
-    }
-    if (this.capturedLogs.length === 0) return;
+  // One RPC at a time. A failed batch stays queued until the next flush.
+  flush(): Promise<void> {
+    if (this.inFlight) return this.inFlight;
+    if (!this.capturedLogs.length) return Promise.resolve();
+    this.inFlight = this.drain().finally(() => { this.inFlight = undefined; });
+    return this.inFlight;
+  }
 
-    const logsToSend = [...this.capturedLogs];
-    this.capturedLogs = [];
-
-    try {
-      await this.ingestLogs(logsToSend);
-    } catch (error) {
-      console.error('Failed to send logs to OpsBuddy:', error);
+  private async drain() {
+    while (this.capturedLogs.length) {
+      const batch = this.capturedLogs.slice(0, this.config.batchSize);
+      try {
+        await this.ingestLogs(batch);
+        this.capturedLogs.splice(0, batch.length);
+      } catch {
+        // Do not log through intercepted console methods: that causes recursion.
+        return;
+      }
     }
   }
+
+  getDroppedLogCount(): number { return this.droppedLogs; }
 
   getCapturedLogs(): CapturedLog[] {
     return [...this.capturedLogs];
@@ -212,6 +238,7 @@ export class OpsBuddySDK {
       }
     }
 
+    this.closed = true;
     this.client.close();
   }
 }
