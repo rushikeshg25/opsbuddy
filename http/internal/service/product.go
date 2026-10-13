@@ -54,7 +54,7 @@ func (s *ProductService) GetProduct(productID string) (*database.Product, error)
 	}
 
 	var product database.Product
-	if err := s.db.Preload("User").First(&product, uint(id)).Error; err != nil {
+	if err := s.db.First(&product, uint(id)).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("product not found")
 		}
@@ -66,7 +66,7 @@ func (s *ProductService) GetProduct(productID string) (*database.Product, error)
 
 func (s *ProductService) GetAllProducts() ([]database.Product, error) {
 	var products []database.Product
-	if err := s.db.Preload("User").Find(&products).Error; err != nil {
+	if err := s.db.Find(&products).Error; err != nil {
 		return nil, err
 	}
 	return products, nil
@@ -74,7 +74,7 @@ func (s *ProductService) GetAllProducts() ([]database.Product, error) {
 
 func (s *ProductService) GetProductsByUser(userID uint) ([]database.Product, error) {
 	var products []database.Product
-	if err := s.db.Where("user_id = ?", userID).Preload("User").Find(&products).Error; err != nil {
+	if err := s.db.Where("user_id = ?", userID).Find(&products).Error; err != nil {
 		return nil, err
 	}
 	return products, nil
@@ -108,7 +108,7 @@ func (s *ProductService) UpdateProduct(productID string, updatedProduct database
 		return nil, err
 	}
 
-	if err := s.db.Preload("User").First(&product, uint(id)).Error; err != nil {
+	if err := s.db.First(&product, uint(id)).Error; err != nil {
 		return nil, err
 	}
 
@@ -148,7 +148,7 @@ func (s *ProductService) SearchProducts(query string) ([]database.Product, error
 	searchQuery := "%" + query + "%"
 
 	if err := s.db.Where("name ILIKE ? OR description ILIKE ?", searchQuery, searchQuery).
-		Preload("User").Find(&products).Error; err != nil {
+		Find(&products).Error; err != nil {
 		return nil, err
 	}
 
