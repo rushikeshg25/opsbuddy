@@ -11,7 +11,7 @@ export const downtimeKeys = {
 export const useDowntime = (query: DowntimeQuery) => {
   return useQuery({
     queryKey: downtimeKeys.list(query),
-    queryFn: () => apiClient.getDowntime(query),
+    queryFn: ({ signal }) => apiClient.getDowntime(query, signal),
     enabled: !!query.product_id,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -19,24 +19,16 @@ export const useDowntime = (query: DowntimeQuery) => {
 };
 
 export const useRecentDowntime = (productId: number, days: number = 30) => {
-  const now = new Date();
-  now.setSeconds(0, 0); // Reset seconds and milliseconds
-  const endDate = now.toISOString();
-  const startDate = new Date(
-    now.getTime() - days * 24 * 60 * 60 * 1000
-  ).toISOString();
-
   return useQuery({
-    queryKey: [
-      ...downtimeKeys.lists(),
-      { productId, days, startDate: startDate.slice(0, 16) },
-    ], // Only use date/hour/minute
-    queryFn: () =>
-      apiClient.getDowntime({
+    queryKey: [...downtimeKeys.lists(), { productId, days }],
+    queryFn: ({ signal }) => {
+      const now = new Date();
+      return apiClient.getDowntime({
         product_id: productId,
-        start_date: startDate,
-        end_date: endDate,
-      }),
+        start_date: new Date(now.getTime() - days * 86400000).toISOString(),
+        end_date: now.toISOString(),
+      }, signal);
+    },
     enabled: !!productId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes

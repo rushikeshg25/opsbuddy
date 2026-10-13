@@ -17,7 +17,7 @@ export const analyticsKeys = {
 export const useUptimeStats = (query: AnalyticsQuery) => {
   return useQuery({
     queryKey: analyticsKeys.uptimeStats(query),
-    queryFn: () => apiClient.getUptimeStats(query),
+    queryFn: ({ signal }) => apiClient.getUptimeStats(query, signal),
     enabled: !!query.product_id,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
@@ -36,8 +36,8 @@ export const useUptimeStats24h = (productId: number) => {
       product_id: productId,
       period: '24h',
     }),
-    queryFn: () =>
-      apiClient.getUptimeStats({ product_id: productId, period: '24h' }),
+    queryFn: ({ signal }) =>
+      apiClient.getUptimeStats({ product_id: productId, period: '24h' }, signal),
     enabled: !!productId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
@@ -51,8 +51,8 @@ export const useUptimeStats7d = (productId: number) => {
       product_id: productId,
       period: '7d',
     }),
-    queryFn: () =>
-      apiClient.getUptimeStats({ product_id: productId, period: '7d' }),
+    queryFn: ({ signal }) =>
+      apiClient.getUptimeStats({ product_id: productId, period: '7d' }, signal),
     enabled: !!productId,
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
@@ -66,8 +66,8 @@ export const useUptimeStats30d = (productId: number) => {
       product_id: productId,
       period: '30d',
     }),
-    queryFn: () =>
-      apiClient.getUptimeStats({ product_id: productId, period: '30d' }),
+    queryFn: ({ signal }) =>
+      apiClient.getUptimeStats({ product_id: productId, period: '30d' }, signal),
     enabled: !!productId,
     staleTime: 15 * 60 * 1000, // 15 minutes
     gcTime: 60 * 60 * 1000, // 1 hour
@@ -81,8 +81,8 @@ export const useUptimeStats90d = (productId: number) => {
       product_id: productId,
       period: '90d',
     }),
-    queryFn: () =>
-      apiClient.getUptimeStats({ product_id: productId, period: '90d' }),
+    queryFn: ({ signal }) =>
+      apiClient.getUptimeStats({ product_id: productId, period: '90d' }, signal),
     enabled: !!productId,
     staleTime: 30 * 60 * 1000, // 30 minutes
     gcTime: 2 * 60 * 60 * 1000, // 2 hours

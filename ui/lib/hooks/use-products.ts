@@ -20,7 +20,7 @@ export const productKeys = {
 export const useProducts = () => {
   return useQuery({
     queryKey: productKeys.lists(),
-    queryFn: () => apiClient.getProducts(),
+    queryFn: ({ signal }) => apiClient.getProducts(signal),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
@@ -28,7 +28,7 @@ export const useProducts = () => {
 export const useProduct = (id: number) => {
   return useQuery({
     queryKey: productKeys.detail(id),
-    queryFn: () => apiClient.getProduct(id),
+    queryFn: ({ signal }) => apiClient.getProduct(id, signal),
     enabled: !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

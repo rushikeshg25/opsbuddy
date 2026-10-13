@@ -44,6 +44,7 @@ class ApiClient {
 
       return response.json();
     } catch (error) {
+      if (options.signal?.aborted) throw error;
       if (error && typeof error === 'object' && 'status' in error) {
         throw error;
       }
@@ -66,16 +67,16 @@ class ApiClient {
   }
 
   // Products API
-  async getProducts(): Promise<Product[]> {
+  async getProducts(signal?: AbortSignal): Promise<Product[]> {
     const response = await this.request<ApiResponse<Product[]>>(
-      '/api/products'
+      '/api/products', { signal }
     );
     return response.data ?? [];
   }
 
-  async getProduct(id: number): Promise<Product> {
+  async getProduct(id: number, signal?: AbortSignal): Promise<Product> {
     const response = await this.request<ApiResponse<Product>>(
-      `/api/products/${id}`
+      `/api/products/${id}`, { signal }
     );
     return response.data!;
   }
@@ -107,36 +108,36 @@ class ApiClient {
   }
 
   // Logs API
-  async getLogs(query: LogsQuery): Promise<LogsResponse> {
+  async getLogs(query: LogsQuery, signal?: AbortSignal): Promise<LogsResponse> {
     const params = this.buildParams(query);
     const response = await this.request<ApiResponse<LogsResponse>>(
-      `/api/logs?${params}`
+      `/api/logs?${params}`, { signal }
     );
     return response.data ?? { logs: [], total: 0, page: 1, limit: 50 };
   }
 
-  async getQuickFixes(query: QuickFixesQuery): Promise<QuickFixesResponse> {
+  async getQuickFixes(query: QuickFixesQuery, signal?: AbortSignal): Promise<QuickFixesResponse> {
     const params = this.buildParams(query);
     const response = await this.request<ApiResponse<QuickFixesResponse>>(
-      `/api/quick-fixes?${params}`
+      `/api/quick-fixes?${params}`, { signal }
     );
     return response.data ?? { quickfixes: [], total: 0, page: 1, limit: 9 };
   }
 
   // Downtime API
-  async getDowntime(query: DowntimeQuery): Promise<Downtime[]> {
+  async getDowntime(query: DowntimeQuery, signal?: AbortSignal): Promise<Downtime[]> {
     const params = this.buildParams(query);
     const response = await this.request<ApiResponse<Downtime[]>>(
-      `/api/downtime?${params}`
+      `/api/downtime?${params}`, { signal }
     );
     return response.data ?? [];
   }
 
   // Analytics API
-  async getUptimeStats(query: AnalyticsQuery): Promise<UptimeStats> {
+  async getUptimeStats(query: AnalyticsQuery, signal?: AbortSignal): Promise<UptimeStats> {
     const params = this.buildParams(query);
     const response = await this.request<ApiResponse<UptimeStats>>(
-      `/api/analytics/uptime?${params}`
+      `/api/analytics/uptime?${params}`, { signal }
     );
     return response.data!;
   }

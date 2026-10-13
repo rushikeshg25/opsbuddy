@@ -14,7 +14,7 @@ export const useLogsRealtime = (
 ) => {
   return useQuery({
     queryKey: logKeys.list(query),
-    queryFn: () => apiClient.getLogs(query),
+    queryFn: ({ signal }) => apiClient.getLogs(query, signal),
     enabled: !!query.product_id,
     refetchInterval: refreshInterval,
     staleTime: 0, // Always consider stale for real-time updates

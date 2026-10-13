@@ -107,14 +107,6 @@ export function ServiceDetail({
     }
   }, [onRefresh]);
 
-  // Auto-refresh every 2 minutes
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      handleRefresh();
-    }, 2 * 60 * 1000);
-    return () => clearInterval(intervalId);
-  }, [handleRefresh]);
-
   const currentStatus = getCurrentServiceStatus(recentDowntime, uptimeStats);
   return (
     <div className="space-y-4">

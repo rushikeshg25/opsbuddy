@@ -64,18 +64,18 @@ export default function ServicePage() {
     try {
       // Invalidate all queries related to this service
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['products', serviceId] }),
+        queryClient.invalidateQueries({ queryKey: ['products', 'detail', serviceId] }),
         queryClient.invalidateQueries({
-          queryKey: ['logs', { product_id: serviceId }],
+          queryKey: ['logs', 'list', { product_id: serviceId }],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['downtime', { productId: serviceId, days: 30 }],
+          queryKey: ['downtime', 'list', { productId: serviceId, days: 30 }],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['uptime-stats', serviceId],
+          queryKey: ['analytics', 'uptime', { product_id: serviceId }],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['quick-fixes', { product_id: serviceId }],
+          queryKey: ['quickfixes', 'list', { product_id: serviceId }],
         }),
       ]);
     } finally {
