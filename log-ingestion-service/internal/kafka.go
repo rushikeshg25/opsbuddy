@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	pb "log-ingestion-service/proto"
 
@@ -17,9 +18,13 @@ type Producer struct {
 func NewProducer(brokers []string, topic string) *Producer {
 	return &Producer{
 		writer: kafka.NewWriter(kafka.WriterConfig{
-			Brokers:  brokers,
-			Topic:    topic,
-			Balancer: &kafka.RoundRobin{},
+			Brokers:          brokers,
+			Topic:            topic,
+			Balancer:         &kafka.Hash{},
+			BatchTimeout:     10 * time.Millisecond,
+			BatchBytes:       1 << 20,
+			RequiredAcks:     -1,
+			CompressionCodec: kafka.Snappy.Codec(),
 		}),
 	}
 }
@@ -67,6 +72,5 @@ func (p *Producer) Write(ctx context.Context, logs []*pb.LogEntry, key string) e
 }
 
 func (p *Producer) Close() error {
-	p.writer.Close()
-	return nil
+	return p.writer.Close()
 }
