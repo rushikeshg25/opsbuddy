@@ -18,7 +18,7 @@ func NewDowntimeService(db *gorm.DB) (*DowntimeService, error) {
 }
 
 func (s *DowntimeService) GetDowntime(productID uint, startDate, endDate, status string) ([]database.Downtime, error) {
-	var downtime []database.Downtime
+	downtime := make([]database.Downtime, 0)
 
 	query := s.db.Where("product_id = ?", productID)
 
@@ -29,7 +29,7 @@ func (s *DowntimeService) GetDowntime(productID uint, startDate, endDate, status
 
 	if startDate != "" {
 		if parsedDate, err := time.Parse(time.RFC3339, startDate); err == nil {
-			query = query.Where("start_time >= ?", parsedDate)
+			query = query.Where("(end_time IS NULL OR end_time >= ?)", parsedDate)
 		}
 	}
 
