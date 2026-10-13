@@ -110,7 +110,7 @@ func (ps *PingService) loadProducts() error {
 				RetryCount: 0,
 				IsDown:     false,
 			}
-			ps.heap.SafePush(item)
+			ps.heap.Register(item)
 		}
 	}
 
@@ -138,12 +138,11 @@ func (ps *PingService) processReadyItems() {
 	now := time.Now()
 
 	for {
-		item := ps.heap.SafePeek()
-		if item == nil || item.NextPingAt.After(now) {
+		item := ps.heap.PopReady(now)
+		if item == nil {
 			break
 		}
 
-		item = ps.heap.SafePop()
 		ps.workerPool.SubmitJob(item)
 	}
 }
@@ -392,6 +391,7 @@ func (ps *PingService) periodicProductFetcher() {
 
 func (ps *PingService) fetchNewProducts() {
 	var newProducts []Product
+	fetchedAt := time.Now()
 
 	err := ps.db.GetDB().Where("created_at > ? AND health_api != ''", ps.lastQueried).
 		Find(&newProducts).Error
@@ -403,7 +403,7 @@ func (ps *PingService) fetchNewProducts() {
 
 	if len(newProducts) == 0 {
 		log.Println("No new products found")
-		ps.lastQueried = time.Now()
+		ps.lastQueried = fetchedAt
 		return
 	}
 
@@ -411,7 +411,7 @@ func (ps *PingService) fetchNewProducts() {
 
 	now := time.Now()
 	for _, product := range newProducts {
-		if !ps.isProductInHeap(product.ID) {
+		{
 			item := &PingItem{
 				ProductID:  product.ID,
 				HealthAPI:  product.HealthAPI,
@@ -419,25 +419,13 @@ func (ps *PingService) fetchNewProducts() {
 				RetryCount: 0,
 				IsDown:     false,
 			}
-			ps.heap.SafePush(item)
+			ps.heap.Register(item)
 			log.Printf("Added new product to ping queue: ID=%d, Name=%s, HealthAPI=%s",
 				product.ID, product.Name, product.HealthAPI)
 		}
 	}
 
-	ps.lastQueried = now
-}
-
-func (ps *PingService) isProductInHeap(productID uint) bool {
-	ps.heap.mutex.RLock()
-	defer ps.heap.mutex.RUnlock()
-
-	for _, item := range ps.heap.items {
-		if item.ProductID == productID {
-			return true
-		}
-	}
-	return false
+	ps.lastQueried = fetchedAt
 }
 
 func newHealthTransport(workers int) *http.Transport {
