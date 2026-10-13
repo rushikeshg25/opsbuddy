@@ -18,7 +18,8 @@ func NewLogsService(db *gorm.DB) (*LogsService, error) {
 }
 
 func (s *LogsService) GetLogs(productID uint, limit, page int, level, startDate, endDate string) ([]database.Log, int, error) {
-	var logs []database.Log
+	limit, page = NormalizePagination(limit, page)
+	logs := make([]database.Log, 0)
 	var total int64
 
 	query := s.db.Model(&database.Log{}).Where("product_id = ?", productID)
@@ -48,9 +49,26 @@ func (s *LogsService) GetLogs(productID uint, limit, page int, level, startDate,
 
 	// Apply pagination and ordering
 	offset := (page - 1) * limit
-	if err := query.Order("timestamp DESC").Limit(limit).Offset(offset).Find(&logs).Error; err != nil {
+	if err := query.Order("timestamp DESC, id DESC").Limit(limit).Offset(offset).Find(&logs).Error; err != nil {
 		return nil, 0, err
 	}
 
 	return logs, int(total), nil
+}
+
+// NormalizePagination bounds work and prevents zero divisors and offset overflow.
+func NormalizePagination(limit, page int) (int, int) {
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 200 {
+		limit = 200
+	}
+	if page < 1 {
+		page = 1
+	}
+	if page > 100000 {
+		page = 100000
+	}
+	return limit, page
 }

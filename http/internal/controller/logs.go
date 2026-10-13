@@ -19,15 +19,15 @@ func NewLogsController(db *gorm.DB, api *gin.RouterGroup) *LogsController {
 	if err != nil {
 		log.Fatalf("Failed to create logs service: %v", err)
 	}
-	
+
 	l := &LogsController{
 		logsService: logsService,
 	}
-	
+
 	// Register routes
 	api.GET("/logs", l.getLogs)
 	api.GET("/products/:product_id/logs", l.getProductLogs)
-	
+
 	return l
 }
 
@@ -67,6 +67,7 @@ func (l *LogsController) getLogs(c *gin.Context) {
 		page = 1
 	}
 
+	limit, page = service.NormalizePagination(limit, page)
 	logs, total, err := l.logsService.GetLogs(uint(productID), limit, page, level, startDate, endDate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -118,6 +119,7 @@ func (l *LogsController) getProductLogs(c *gin.Context) {
 		page = 1
 	}
 
+	limit, page = service.NormalizePagination(limit, page)
 	logs, total, err := l.logsService.GetLogs(uint(productID), limit, page, level, startDate, endDate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

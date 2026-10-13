@@ -1,5 +1,7 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+let checkingAuth = false;
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface User {
   id: string;
@@ -57,16 +59,16 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       login: () => {
-        window.location.href = 'http://localhost:8080/auth/google';
+        window.location.href = `${API_ORIGIN}/auth/google`;
       },
 
       logout: async () => {
         set({ isLoading: true });
-        
+
         try {
-          const response = await fetch('http://localhost:8080/auth/logout', {
-            method: 'POST',
-            credentials: 'include'
+          const response = await fetch(`${API_ORIGIN}/auth/logout`, {
+            method: "POST",
+            credentials: "include",
           });
 
           if (response.ok) {
@@ -75,33 +77,34 @@ export const useAuthStore = create<AuthStore>()(
               isAuthenticated: false,
               isLoading: false,
             });
-            
+
             // Redirect to sign-in page
-            window.location.href = '/sign-in';
+            window.location.href = "/sign-in";
           } else {
-            throw new Error('Logout failed');
+            throw new Error("Logout failed");
           }
         } catch (error) {
-          console.error('Logout error:', error);
+          console.error("Logout error:", error);
           // Even if logout fails on server, clear local state
           set({
             user: null,
             isAuthenticated: false,
             isLoading: false,
           });
-          window.location.href = '/sign-in';
+          window.location.href = "/sign-in";
         }
       },
 
       checkAuth: async () => {
         const state = get();
-        if (state.isInitialized) return;
-        
+        if (state.isInitialized || checkingAuth) return;
+        checkingAuth = true;
+
         set({ isLoading: true });
-        
+
         try {
-          const response = await fetch('http://localhost:8080/api/me', {
-            credentials: 'include'
+          const response = await fetch(`${API_ORIGIN}/api/me`, {
+            credentials: "include",
           });
 
           if (response.ok) {
@@ -122,7 +125,7 @@ export const useAuthStore = create<AuthStore>()(
             });
           }
         } catch (error) {
-          console.error('Auth check failed:', error);
+          console.error("Auth check failed:", error);
           // Clear any stale persisted data
           set({
             user: null,
@@ -130,15 +133,17 @@ export const useAuthStore = create<AuthStore>()(
             isLoading: false,
             isInitialized: true,
           });
+        } finally {
+          checkingAuth = false;
         }
       },
 
       refreshAuth: async () => {
         set({ isLoading: true });
-        
+
         try {
-          const response = await fetch('http://localhost:8080/api/me', {
-            credentials: 'include'
+          const response = await fetch(`${API_ORIGIN}/api/me`, {
+            credentials: "include",
           });
 
           if (response.ok) {
@@ -158,7 +163,7 @@ export const useAuthStore = create<AuthStore>()(
             });
           }
         } catch (error) {
-          console.error('Auth refresh failed:', error);
+          console.error("Auth refresh failed:", error);
           set({
             user: null,
             isAuthenticated: false,
@@ -173,12 +178,12 @@ export const useAuthStore = create<AuthStore>()(
       },
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage",
       // Only persist user data, not loading states
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-    }
-  )
+    },
+  ),
 );

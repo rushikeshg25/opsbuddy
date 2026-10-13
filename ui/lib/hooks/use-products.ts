@@ -1,26 +1,27 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
 import {
   Product,
   CreateProductRequest,
   UpdateProductRequest,
-} from '@/lib/types/api';
+} from "@/lib/types/api";
 
 // Query Keys
 export const productKeys = {
-  all: ['products'] as const,
-  lists: () => [...productKeys.all, 'list'] as const,
+  all: ["products"] as const,
+  lists: () => [...productKeys.all, "list"] as const,
   list: (filters: Record<string, any>) =>
     [...productKeys.lists(), { filters }] as const,
-  details: () => [...productKeys.all, 'detail'] as const,
+  details: () => [...productKeys.all, "detail"] as const,
   detail: (id: number) => [...productKeys.details(), id] as const,
 };
 
 // Hooks
-export const useProducts = () => {
+export const useProducts = (enabled = true) => {
   return useQuery({
+    enabled,
     queryKey: productKeys.lists(),
-    queryFn: () => apiClient.getProducts(),
+    queryFn: ({ signal }) => apiClient.getProducts(signal),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
@@ -28,7 +29,7 @@ export const useProducts = () => {
 export const useProduct = (id: number) => {
   return useQuery({
     queryKey: productKeys.detail(id),
-    queryFn: () => apiClient.getProduct(id),
+    queryFn: ({ signal }) => apiClient.getProduct(id, signal),
     enabled: !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -59,7 +60,7 @@ export const useUpdateProduct = () => {
       // Update the specific product in cache
       queryClient.setQueryData(
         productKeys.detail(updatedProduct.id),
-        updatedProduct
+        updatedProduct,
       );
 
       // Update the product in the list cache
@@ -68,9 +69,9 @@ export const useUpdateProduct = () => {
         (oldData: Product[] | undefined) => {
           if (!oldData) return oldData;
           return oldData.map((product) =>
-            product.id === updatedProduct.id ? updatedProduct : product
+            product.id === updatedProduct.id ? updatedProduct : product,
           );
-        }
+        },
       );
     },
   });
@@ -88,7 +89,7 @@ export const useDeleteProduct = () => {
         (oldData: Product[] | undefined) => {
           if (!oldData) return oldData;
           return oldData.filter((product) => product.id !== deletedId);
-        }
+        },
       );
 
       // Remove the specific product from cache

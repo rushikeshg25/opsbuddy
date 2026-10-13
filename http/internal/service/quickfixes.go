@@ -18,7 +18,8 @@ func NewQuickFixesService(db *gorm.DB) (*QuickFixesService, error) {
 }
 
 func (s *QuickFixesService) GetQuickFixes(productID uint, limit, page int, level, startDate, endDate string) ([]database.ProductQuickFix, int, error) {
-	var quickfixes []database.ProductQuickFix
+	limit, page = NormalizePagination(limit, page)
+	quickfixes := make([]database.ProductQuickFix, 0)
 	var total int64
 
 	query := s.db.Model(&database.ProductQuickFix{}).Where("product_id = ?", productID)
@@ -40,7 +41,7 @@ func (s *QuickFixesService) GetQuickFixes(productID uint, limit, page int, level
 	}
 
 	offset := (page - 1) * limit
-	if err := query.Order("created_at DESC").Limit(limit).Offset(offset).Find(&quickfixes).Error; err != nil {
+	if err := query.Order("created_at DESC, id DESC").Limit(limit).Offset(offset).Find(&quickfixes).Error; err != nil {
 		return nil, 0, err
 	}
 

@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -50,7 +51,8 @@ func NewPingService(db Service, workerCount int) *PingService {
 		db:   db,
 		heap: NewPingHeap(),
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout:   10 * time.Second,
+			Transport: newHealthTransport(workerCount),
 		},
 		ctx:           ctx,
 		cancel:        cancel,
@@ -83,6 +85,7 @@ func (ps *PingService) Stop() {
 	log.Println("Stopping ping service...")
 	ps.cancel()
 	ps.workerPool.Stop()
+	ps.httpClient.CloseIdleConnections()
 
 	if err := ps.kafkaProducer.Close(); err != nil {
 		log.Printf("Error closing Kafka producer: %v", err)
@@ -107,7 +110,7 @@ func (ps *PingService) loadProducts() error {
 				RetryCount: 0,
 				IsDown:     false,
 			}
-			ps.heap.SafePush(item)
+			ps.heap.Register(item)
 		}
 	}
 
@@ -135,12 +138,11 @@ func (ps *PingService) processReadyItems() {
 	now := time.Now()
 
 	for {
-		item := ps.heap.SafePeek()
-		if item == nil || item.NextPingAt.After(now) {
+		item := ps.heap.PopReady(now)
+		if item == nil {
 			break
 		}
 
-		item = ps.heap.SafePop()
 		ps.workerPool.SubmitJob(item)
 	}
 }
@@ -168,12 +170,13 @@ func (ps *PingService) performHealthCheck(healthAPI string) bool {
 		return false
 	}
 	defer resp.Body.Close()
+	// Drain small responses so the transport can reuse TCP/TLS connections.
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64*1024))
 
 	return resp.StatusCode == http.StatusOK
 }
 
 func (ps *PingService) handleSuccessfulPing(item *PingItem) {
-	log.Printf("Product %d health check successful", item.ProductID)
 
 	// If service was down, mark it as up
 	if item.IsDown {
@@ -388,6 +391,7 @@ func (ps *PingService) periodicProductFetcher() {
 
 func (ps *PingService) fetchNewProducts() {
 	var newProducts []Product
+	fetchedAt := time.Now()
 
 	err := ps.db.GetDB().Where("created_at > ? AND health_api != ''", ps.lastQueried).
 		Find(&newProducts).Error
@@ -399,7 +403,7 @@ func (ps *PingService) fetchNewProducts() {
 
 	if len(newProducts) == 0 {
 		log.Println("No new products found")
-		ps.lastQueried = time.Now()
+		ps.lastQueried = fetchedAt
 		return
 	}
 
@@ -407,7 +411,7 @@ func (ps *PingService) fetchNewProducts() {
 
 	now := time.Now()
 	for _, product := range newProducts {
-		if !ps.isProductInHeap(product.ID) {
+		{
 			item := &PingItem{
 				ProductID:  product.ID,
 				HealthAPI:  product.HealthAPI,
@@ -415,23 +419,21 @@ func (ps *PingService) fetchNewProducts() {
 				RetryCount: 0,
 				IsDown:     false,
 			}
-			ps.heap.SafePush(item)
+			ps.heap.Register(item)
 			log.Printf("Added new product to ping queue: ID=%d, Name=%s, HealthAPI=%s",
 				product.ID, product.Name, product.HealthAPI)
 		}
 	}
 
-	ps.lastQueried = now
+	ps.lastQueried = fetchedAt
 }
 
-func (ps *PingService) isProductInHeap(productID uint) bool {
-	ps.heap.mutex.RLock()
-	defer ps.heap.mutex.RUnlock()
-
-	for _, item := range ps.heap.items {
-		if item.ProductID == productID {
-			return true
-		}
-	}
-	return false
+func newHealthTransport(workers int) *http.Transport {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.MaxIdleConns = max(workers*2, 100)
+	t.MaxIdleConnsPerHost = max(workers, 2)
+	t.MaxConnsPerHost = max(workers, 2)
+	t.IdleConnTimeout = 90 * time.Second
+	t.ResponseHeaderTimeout = 5 * time.Second
+	return t
 }

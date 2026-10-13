@@ -1,29 +1,31 @@
-'use client';
+"use client";
 
-import { SiteHeader } from '@/components/site-header';
-import Link from 'next/link';
-import { ServiceDetail } from '@/components/service-detail';
-import { useRequireAuth } from '@/lib/hooks/use-auth';
-import { useProduct } from '@/lib/hooks/use-products';
-import { useLogsRealtime } from '@/lib/hooks/use-logs';
-import { useRecentDowntime } from '@/lib/hooks/use-downtime';
+import { SiteHeader } from "@/components/site-header";
+import Link from "next/link";
+import { ServiceDetail } from "@/components/service-detail";
+import { useRequireAuth } from "@/lib/hooks/use-auth";
+import { useProduct } from "@/lib/hooks/use-products";
+import { useLogsRealtime } from "@/lib/hooks/use-logs";
+import { useRecentDowntime } from "@/lib/hooks/use-downtime";
 import {
   useUptimeStats24h,
   useUptimeStats7d,
   useUptimeStats30d,
-} from '@/lib/hooks/use-analytics';
-import { useParams, useRouter } from 'next/navigation';
-import { useQuickFixes } from '@/lib/hooks/use-quickfixes';
-import { useQueryClient } from '@tanstack/react-query';
-import { useState, useCallback } from 'react';
+} from "@/lib/hooks/use-analytics";
+import { useParams } from "next/navigation";
+import { useQuickFixes } from "@/lib/hooks/use-quickfixes";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState, useCallback } from "react";
 
 export default function ServicePage() {
   const { user, isLoading: authLoading } = useRequireAuth();
   const params = useParams();
-  const router = useRouter();
   const queryClient = useQueryClient();
+  const [fixPage, setFixPage] = useState(1);
+  const [logPage, setLogPage] = useState(1);
+  const [activeTab, setActiveTab] = useState("overview");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const serviceId = parseInt(params.serviceId as string);
+  const serviceId = !authLoading && user ? Number(params.serviceId) : 0;
 
   // Fetch service data
   const {
@@ -40,15 +42,19 @@ export default function ServicePage() {
     {
       product_id: serviceId,
       limit: 50,
+      page: logPage,
     },
-    30000
+    30000,
   );
 
   const {
     data: quickfixesData,
     isLoading: isLoadingQuickfixes,
     error: quickfixesError,
-  } = useQuickFixes({ product_id: serviceId });
+  } = useQuickFixes(
+    { product_id: serviceId, page: fixPage, limit: 10 },
+    activeTab === "quickfixes",
+  );
 
   // Fetch recent downtime incidents (last 30 days)
   const { data: recentDowntime } = useRecentDowntime(serviceId, 30);
@@ -64,18 +70,20 @@ export default function ServicePage() {
     try {
       // Invalidate all queries related to this service
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['products', serviceId] }),
         queryClient.invalidateQueries({
-          queryKey: ['logs', { product_id: serviceId }],
+          queryKey: ["products", "detail", serviceId],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['downtime', { productId: serviceId, days: 30 }],
+          queryKey: ["logs", "list", { product_id: serviceId }],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['uptime-stats', serviceId],
+          queryKey: ["downtime", "list", { productId: serviceId, days: 30 }],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['quick-fixes', { product_id: serviceId }],
+          queryKey: ["analytics", "uptime", { product_id: serviceId }],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["quickfixes", "list", { product_id: serviceId }],
         }),
       ]);
     } finally {
@@ -83,11 +91,7 @@ export default function ServicePage() {
     }
   }, [queryClient, serviceId]);
 
-  // Redirect if service not found
-  if (error && 'status' in error && error.status === 404) {
-    router.push('/services');
-    return null;
-  }
+  // Render navigation instead of redirecting during React render.
 
   if (authLoading || isLoadingService) {
     return (
@@ -106,7 +110,15 @@ export default function ServicePage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400">Service not found</p>
+          <p className="text-muted-foreground">
+            {error ? "Could not load this service." : "Service not found."}
+          </p>
+          <Link
+            href="/services"
+            className="mt-4 inline-block text-primary underline"
+          >
+            Back to services
+          </Link>
         </div>
       </div>
     );
@@ -115,15 +127,16 @@ export default function ServicePage() {
   return (
     <main>
       <SiteHeader />
-      <section className="mx-auto max-w-6xl px-4 py-8">
+      <section id="main-content" tabIndex={-1} className="page-shell">
         <div className="mb-4 text-sm text-muted-foreground">
           <Link href="/services" className="hover:text-foreground">
             Services
-          </Link>{' '}
+          </Link>{" "}
           / <span className="text-primary">{service.name}</span>
         </div>
         <ServiceDetail
           service={service}
+          onTabChange={setActiveTab}
           recentLogs={recentLogs}
           recentDowntime={recentDowntime}
           uptimeStats={{
@@ -137,6 +150,8 @@ export default function ServicePage() {
           isLoadingQuickfixes={isLoadingQuickfixes}
           quickfixesError={quickfixesError || undefined}
           onRefresh={handleRefresh}
+          onLogPageChange={setLogPage}
+          onFixPageChange={setFixPage}
           isRefreshing={isRefreshing}
         />
       </section>

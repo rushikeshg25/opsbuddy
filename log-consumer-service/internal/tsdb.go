@@ -303,22 +303,9 @@ func (r *LogRepository) AddLogsBatch(logs []Log) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Use transaction for batch operations with optimized settings
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Disable foreign key checks for better performance during batch insert
-		if err := tx.Exec("SET session_replication_role = replica").Error; err != nil {
-			log.Printf("Warning: Could not disable foreign key checks: %v", err)
-		}
-
-		err := tx.CreateInBatches(logs, batchSize).Error
-
-		// Re-enable foreign key checks
-		if err2 := tx.Exec("SET session_replication_role = DEFAULT").Error; err2 != nil {
-			log.Printf("Warning: Could not re-enable foreign key checks: %v", err2)
-		}
-
-		return err
-	})
+	// GORM wraps the bounded inserts in a transaction; keep FK checks enabled.
+	// Avoid two SET round trips and nested transaction/savepoint overhead.
+	return r.db.WithContext(ctx).CreateInBatches(logs, batchSize).Error
 }
 
 // DeleteOldLogs deletes logs older than the specified time

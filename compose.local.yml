@@ -1,0 +1,67 @@
+# Isolated infrastructure for docs/local-development.md.
+# Host applications connect through the loopback-only ports below.
+name: opsbuddy-local
+services:
+  kafka:
+    image: apache/kafka:3.9.0
+    user: root
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - local_kafka:/var/lib/kafka/data
+    ports:
+      - '127.0.0.1:9094:9094'
+    healthcheck:
+      test: ['CMD-SHELL', '/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1']
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+  timescaledb:
+    image: timescale/timescaledb:2.17.2-pg14
+    environment:
+      POSTGRES_PASSWORD: local-opsbuddy-password
+      POSTGRES_USER: postgres
+      POSTGRES_DB: opsbuddy_local
+    ports:
+      - '127.0.0.1:5433:5432'
+    volumes:
+      - local_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d opsbuddy_local']
+      interval: 3s
+      timeout: 5s
+      retries: 30
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - '127.0.0.1:6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 3s
+      timeout: 5s
+      retries: 30
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    ports:
+      - '127.0.0.1:8088:8080'
+    environment:
+      KAFKA_CLUSTERS_0_NAME: opsbuddy-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_READONLY: 'true'
+    depends_on:
+      kafka:
+        condition: service_healthy
+volumes:
+  local_pg:
+  local_kafka:
