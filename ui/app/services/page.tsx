@@ -13,6 +13,7 @@ export default function ServicesPage() {
   const {
     data: products = [],
     isLoading: isLoadingProducts,
+    isFetching,
     error,
     refetch: fetchProducts,
   } = useProducts();
@@ -24,14 +25,15 @@ export default function ServicesPage() {
   return (
     <main>
       <SiteHeader />
-      <section id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
+      <section id="main-content" tabIndex={-1} className="page-shell">
+        <div className="flex flex-wrap justify-between items-end gap-5 mb-8">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Your services
+            <p className="eyebrow mb-3">Workspace / Monitoring</p>
+            <h1 className="page-title">
+              Services
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Search, paginate, and add more services to monitor.
+              A clear view of the services you depend on.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -39,9 +41,9 @@ export default function ServicesPage() {
             <Button
               variant="outline"
               onClick={() => fetchProducts()}
-              disabled={isLoadingProducts}
+              disabled={isFetching}
             >
-              {isLoadingProducts ? 'Refreshing...' : 'Refresh'}
+              {isFetching ? 'Refreshing…' : 'Refresh'}
             </Button>
           </div>
         </div>
@@ -63,8 +65,8 @@ export default function ServicesPage() {
             </div>
           ) : products.length > 0 ? (
             <ServicesBrowser products={products} />
-          ) : (
-            <div className="text-center py-12">
+          ) : !error ? (
+            <div className="panel empty-state">
               <div className="max-w-md mx-auto">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                   No services yet
@@ -75,7 +77,7 @@ export default function ServicesPage() {
                 <CreateServiceModal />
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       </section>
     </main>
