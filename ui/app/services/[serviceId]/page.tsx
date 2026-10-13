@@ -22,6 +22,7 @@ export default function ServicePage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [logPage, setLogPage] = useState(1);
   const [activeTab, setActiveTab] = useState('overview');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const serviceId = parseInt(params.serviceId as string);
@@ -41,6 +42,7 @@ export default function ServicePage() {
     {
       product_id: serviceId,
       limit: 50,
+      page: logPage,
     },
     30000
   );
@@ -139,6 +141,7 @@ export default function ServicePage() {
           isLoadingQuickfixes={isLoadingQuickfixes}
           quickfixesError={quickfixesError || undefined}
           onRefresh={handleRefresh}
+          onLogPageChange={setLogPage}
           isRefreshing={isRefreshing}
         />
       </section>
